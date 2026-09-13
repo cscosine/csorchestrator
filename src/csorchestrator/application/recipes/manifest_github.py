@@ -7,6 +7,10 @@ from urllib import request
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin
 
+from csorchestrator.domain.context.context_os_architecture import (
+    OS,
+    UBUNTU_STRING_PREFIX,
+)
 from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
 from csorchestrator.foundation.core.optional_result_with_report import (
     OptionalResultWithReport,
@@ -15,6 +19,11 @@ from csorchestrator.foundation.core.report import Report
 from csorchestrator.foundation.file_system.directory import (
     ensure_directory_exists_or_create_and_is_usable,
 )
+from csorchestrator.frontend.local_execution.step_utils import (
+    StepExecuteOnlyOn,
+    StepExecuteOnlyOncePerMatrix,
+)
+from csorchestrator.frontend.step.step_custom_command import StepInstallAptPackages
 from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
     MappingFunction,
     StepGetPrecompiledLibGithub,
@@ -326,3 +335,24 @@ def download_csorchestrator_managed_libraries(
         )
 
     return report
+
+
+def install_ubuntu_apt_packages(
+    orchestrator: Orchestrator,
+    packages: list[str],
+    name: str = "install apt packages",
+    description: str = "install apt packages if not already installed in the system",
+    phase_name: str = "Install Requirements (Linux-Ubuntu)",
+) -> None:
+
+    p = orchestrator.create_phase(phase_name)
+    p.add_step(
+        StepInstallAptPackages(
+            name=name,
+            description=description,
+            packages=packages,
+            dry_run=False,
+        )
+        .add_extra(StepExecuteOnlyOncePerMatrix())
+        .add_extra(StepExecuteOnlyOn(os=OS.LINUX, version_starts_with=UBUNTU_STRING_PREFIX))
+    )
