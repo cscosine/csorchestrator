@@ -135,7 +135,6 @@ def execute_step_get_precompiled_lib(
     assert dir_creation_res.value is not None
     target_dir = dir_creation_res.value
 
-    # TODO: correct name, use the proper function to generate
     filename = create_archive_filename(
         project_name_and_version=Orchestrator.compose_name_version_to_string(step.project_name, step.project_version),
         context_os_architecture_compiler_generator_string=release_name_part,
@@ -225,7 +224,14 @@ def step_get_precompiled_lib_to_githubwf(
     steps: list[GithubStepInterface] = []
 
     if step.mapping_function is None:
-        src_filename = str(release_name_part + "-" + step.lib_name + "-" + step.lib_version + ".tar.gz")
+        src_filename = create_archive_filename(
+            project_name_and_version=Orchestrator.compose_name_version_to_string(
+                step.project_name, step.project_version
+            ),
+            context_os_architecture_compiler_generator_string=release_name_part,
+            lib_name=step.lib_name,
+            lib_version=step.lib_version,
+        )
 
         steps.append(
             StepGitHubAction(
@@ -262,6 +268,7 @@ def step_get_precompiled_lib_to_githubwf(
         run_list = [
             "import os",
             "import sys",
+            "from csorchestratorsdk.portable.release_manifest import create_archive_filename",
             "",
             f'execution_id = int("{MatrixOsArchCompilerGeneratorGithubConstants.MATRIX_EXECUTION_ID_EMBRACED}")',
             "",
@@ -275,8 +282,12 @@ def step_get_precompiled_lib_to_githubwf(
             '    print("Unsupported matrix entry")',
             "    sys.exit(1)",
             "",
-            f"filename = filenames[execution_id] + '-{step.lib_name}-{step.lib_version}.tar.gz'",
-            "",
+            "filename = create_archive_filename(",
+            f"    project_name_and_version='{step.project_name}-{step.project_version}',",
+            "    context_os_architecture_compiler_generator_string=filenames[execution_id],",
+            f"    lib_name='{step.lib_name}',",
+            f"    lib_version='{step.lib_version}',",
+            ")",
             'with open(os.environ["GITHUB_OUTPUT"], "a") as f:',
             f'    f.write(f"{filename_variable}={{filename}}\\n")',
         ]
@@ -287,6 +298,7 @@ def step_get_precompiled_lib_to_githubwf(
                 id=step_id,
                 shell_type="python",
                 run=run_list,
+                env={"PYTHONPATH": "${{ github.workspace }}"},
             )
         )
 

@@ -121,7 +121,7 @@ def release_creation_on_tag_config_to_githubwf(
         python_code, "project_name", repr(release_creation_context.orchestrator_description.orchestrator_name)
     )
     python_code = replace_template_variable(
-        python_code, "repos_version", repr(release_creation_context.orchestrator_description.orchestrator_version)
+        python_code, "project_version", repr(release_creation_context.orchestrator_description.orchestrator_version)
     )
 
     python_code = replace_template_variable(
