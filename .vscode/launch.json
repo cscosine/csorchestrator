@@ -412,6 +412,56 @@
       "justMyCode": false
     },
     {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_resolve_library_dependencies_expands_direct_dependencies",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_resolve_library_dependencies_expands_direct_dependencies"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_resolve_library_dependencies_expands_transitive_dependencies",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_resolve_library_dependencies_expands_transitive_dependencies"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_resolve_library_dependencies_lib_without_declared_dependencies",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_resolve_library_dependencies_lib_without_declared_dependencies"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_resolve_library_dependencies_no_mapping_returns_list_unchanged",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_resolve_library_dependencies_no_mapping_returns_list_unchanged"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_resolve_library_dependencies_none_list_returns_none",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_resolve_library_dependencies_none_list_returns_none"
+      ],
+      "justMyCode": false
+    },
+    {
       "name": "\ud83e\uddea tests/csorchestrator/cli/test_cli \u2192 test_run_command_loads_project_script",
       "type": "debugpy",
       "request": "launch",

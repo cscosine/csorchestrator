@@ -11,6 +11,7 @@ from csorchestrator.application.recipes.manifest_github import (
     ManifestGithub,
     create_steps_to_get_libs_from_manifest,
     download_manifest_bundle,
+    resolve_library_dependencies,
 )
 from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
 from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
@@ -307,3 +308,38 @@ def test_download_manifest_bundle_download_error_reported(tmp_path, monkeypatch)
     assert "Network error" in report.errors[0]
     assert not (extract_folder / "3rdPartyBaseLibs-0.1.0-bundle.tar.gz").exists()
     assert extract_folder.exists()
+
+
+def test_resolve_library_dependencies_none_list_returns_none():
+    mapping: dict[str, list[str]] = {"a": ["b"]}
+
+    assert resolve_library_dependencies(None, mapping) is None
+
+
+def test_resolve_library_dependencies_no_mapping_returns_list_unchanged():
+    assert resolve_library_dependencies(["b", "a"], None) == ["b", "a"]
+
+
+def test_resolve_library_dependencies_lib_without_declared_dependencies():
+    mapping = {"fmt-eigen": ["eigen3", "fmt"]}
+
+    assert resolve_library_dependencies(["cpptrace"], mapping) == ["cpptrace"]
+
+
+def test_resolve_library_dependencies_expands_direct_dependencies():
+    mapping = {"fmt-eigen": ["eigen3", "fmt"]}
+
+    assert resolve_library_dependencies(["fmt-eigen"], mapping) == ["eigen3", "fmt", "fmt-eigen"]
+
+
+def test_resolve_library_dependencies_expands_transitive_dependencies():
+    mapping = {"fmt-eigen": ["eigen3", "fmt"], "libassert": ["cpptrace"], "cpptrace": ["zlib"]}
+
+    assert resolve_library_dependencies(["libassert", "fmt-eigen"], mapping) == [
+        "cpptrace",
+        "eigen3",
+        "fmt",
+        "fmt-eigen",
+        "libassert",
+        "zlib",
+    ]

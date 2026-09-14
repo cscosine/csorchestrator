@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import TypeAlias
 from urllib import request
 from urllib.error import HTTPError, URLError
-from urllib.parse import urljoin
 
 from csorchestrator.domain.context.context_os_architecture import (
     OS,
@@ -27,6 +26,7 @@ from csorchestrator.frontend.step.step_custom_command import StepInstallAptPacka
 from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
     MappingFunction,
     StepGetPrecompiledLibGithub,
+    create_github_release_download_url,
 )
 from csorchestrator.frontend.step.step_get_repository import StepGetRepositoryGitHub
 from csorchestrator.portable.release_manifest import ReleaseManifest
@@ -165,18 +165,12 @@ def download_manifest_bundle(
     bundle_filename = Path(bundle_file_name).name
     target_filename = extract_dir / bundle_filename
 
-    download_url = urljoin(
-        manifest_description.base_url,
-        "/".join(
-            [
-                manifest_description.org,
-                manifest_description.git_repo,
-                "releases",
-                "download",
-                manifest_description.release_tag,
-                bundle_filename,
-            ]
-        ),
+    download_url = create_github_release_download_url(
+        base_url=manifest_description.base_url,
+        org=manifest_description.org,
+        git_repo=manifest_description.git_repo,
+        tag=manifest_description.release_tag,
+        asset_filename=bundle_filename,
     )
     report.append_info("download URL " + download_url + " to " + target_filename.as_posix())
 
@@ -228,27 +222,20 @@ def download_manifest(manifest_description: ManifestGithub, output_folder: Path)
     assert dir_creation_res.value is not None
     target_dir = dir_creation_res.value
 
-    # TODO not great to join with "-" here
-    source_filename = (
-        manifest_description.project_name
-        + "-"
-        + manifest_description.project_version
-        + ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION
+    source_filename = Path(
+        Orchestrator.compose_name_version_to_string(
+            manifest_description.project_name, manifest_description.project_version
+        )
+        + ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION,
     )
     target_filename = target_dir / source_filename
 
-    download_url = urljoin(
-        manifest_description.base_url,
-        "/".join(
-            [
-                manifest_description.org,
-                manifest_description.git_repo,
-                "releases",
-                "download",
-                manifest_description.release_tag,
-                source_filename,
-            ]
-        ),
+    download_url = create_github_release_download_url(
+        base_url=manifest_description.base_url,
+        org=manifest_description.org,
+        git_repo=manifest_description.git_repo,
+        tag=manifest_description.release_tag,
+        asset_filename=source_filename,
     )
     report.append_info("download URL " + download_url + " to " + target_filename.as_posix())
 
@@ -275,6 +262,37 @@ def download_manifest(manifest_description: ManifestGithub, output_folder: Path)
     return OptionalManifestPathWithReport.create_result_and_report(target_filename, report)
 
 
+def resolve_library_dependencies(
+    lib_name_list: list[str] | None,
+    library_dependencies: dict[str, list[str]] | None = None,
+) -> list[str] | None:
+    """
+    Expand a library list with their (transitive) dependencies.
+
+    ``library_dependencies`` maps a library name to the list of libraries it depends on.
+    The expansion is applied repeatedly until the set of libraries is stable, so
+    requesting ``["fmt-eigen"]`` with the mapping ``{"fmt-eigen": ["eigen3", "fmt"]}``
+    yields ``["eigen3", "fmt", "fmt-eigen"]``.
+
+    If ``lib_name_list`` is None (all libraries selected) or ``library_dependencies``
+    is None (no auto-fill requested), the list is returned unchanged.
+    """
+    if lib_name_list is None or not library_dependencies:
+        return lib_name_list
+
+    resolved: set[str] = set(lib_name_list)
+    changed = True
+    while changed:
+        changed = False
+        for lib in sorted(resolved):
+            for dependency in library_dependencies.get(lib, ()):
+                if dependency not in resolved:
+                    resolved.add(dependency)
+                    changed = True
+
+    return sorted(resolved)
+
+
 def download_csorchestrator_managed_libraries(
     orchestrator: Orchestrator,
     base_url: str,
@@ -287,8 +305,12 @@ def download_csorchestrator_managed_libraries(
     manifest_dest_folder: Path | None = None,
     bundle_dest_folder: Path | None = None,
     lib_name_list: list[str] | None = None,
+    library_dependencies: dict[str, list[str]] | None = None,
     mapping_function: MappingFunction | None = None,
 ) -> Report:
+    if lib_name_list is not None:
+        lib_name_list = resolve_library_dependencies(lib_name_list, library_dependencies)
+
     if manifest_dest_folder is None:
         manifest_dest_folder = Path("libs") / Path("manifests")
 

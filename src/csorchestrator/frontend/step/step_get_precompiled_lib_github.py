@@ -103,6 +103,22 @@ class StepGetPrecompiledLibGithub(StepBase):
     # with keyring in local and token in github
 
 
+def create_github_release_download_url(
+    base_url: str,
+    org: str,
+    git_repo: str,
+    tag: str,
+    asset_filename: str | Path,
+) -> str:
+    """Create the download URL of an asset published in a GitHub release."""
+    asset_filename_str = asset_filename.as_posix() if isinstance(asset_filename, Path) else asset_filename
+
+    return urljoin(
+        base_url,
+        "/".join([org, git_repo, "releases", "download", tag, asset_filename_str]),
+    )
+
+
 def execute_step_get_precompiled_lib(
     step: StepGetPrecompiledLibGithub,
     context: ContextLocalExecution,
@@ -144,18 +160,12 @@ def execute_step_get_precompiled_lib(
     source_filename = filename
     target_filename = target_dir / filename
 
-    download_url = urljoin(
-        step.base_url,
-        "/".join(
-            [
-                step.org,
-                step.git_repo,
-                "releases",
-                "download",
-                step.project_tag,
-                source_filename,
-            ]
-        ),
+    download_url = create_github_release_download_url(
+        base_url=step.base_url,
+        org=step.org,
+        git_repo=step.git_repo,
+        tag=step.project_tag,
+        asset_filename=source_filename,
     )
     report.append_info("download URL " + download_url + " to " + target_filename.as_posix())
 
