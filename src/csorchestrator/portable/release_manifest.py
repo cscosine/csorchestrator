@@ -78,6 +78,7 @@ class ReleaseManifest:
         # TODO robustify and return possible errors
         with path.open("w", encoding="utf-8") as f:
             json.dump(self.to_dict(), f, indent=2, sort_keys=True)
+            f.write("\n")
 
     @classmethod
     def load_release_manifest(
