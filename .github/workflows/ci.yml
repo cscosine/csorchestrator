@@ -76,9 +76,11 @@ jobs:
 
       - name: Add coverage to summary
         run: |
-          echo "## 🧪 Coverage (${{ matrix.os }} / Python ${{ matrix.python-version }} / ${{ matrix.deps }})" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat coverage-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.deps }}.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 🧪 Coverage (${{ matrix.os }} / Python ${{ matrix.python-version }} / ${{ matrix.deps }})"
+            echo ""
+            echo '```'
+            cat "coverage-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.deps }}.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
         shell: bash
