@@ -22,9 +22,9 @@ class OptionalResultWithReport(Generic[T]):
         return self.result if self.result is not None else default
 
     @classmethod
-    def createResultAndReport(cls, result: T, report: Report) -> "OptionalResultWithReport[T]":
+    def create_result_and_report(cls, result: T, report: Report) -> "OptionalResultWithReport[T]":
         return cls(report, result)
 
     @classmethod
-    def createReport(cls, report: Report) -> "OptionalResultWithReport[T]":
+    def create_report(cls, report: Report) -> "OptionalResultWithReport[T]":
         return cls(report)

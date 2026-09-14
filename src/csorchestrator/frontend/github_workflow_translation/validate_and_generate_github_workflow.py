@@ -9,9 +9,9 @@ from csorchestrator.domain.context.context_compiler_generator import ContextComp
 from csorchestrator.domain.context.context_os_architecture import (
     OS,
     UBUNTU_STRING_PREFIX,
-    UBUNTU_VERSIONS,
-    WINDOWS_VERSIONS,
     Architecture,
+    UbuntuVersions,
+    WindowsVersions,
 )
 from csorchestrator.domain.context.context_os_architecture_compiler_generator import (
     ContextOsArchitectureCompilerGenerator,
@@ -65,15 +65,15 @@ def get_runner(entry: ContextOsArchitectureCompilerGenerator) -> Expected[str, s
     compiler_version = entry.context_compiler_generator.compiler_version
 
     if os == OS.LINUX:
-        if os_version == UBUNTU_VERSIONS.UBUNTU_22_04.value and arch == Architecture.X64:
+        if os_version == UbuntuVersions.UBUNTU_22_04.value and arch == Architecture.X64:
             return Expected[str, str].make_value(GITHUB_RUNNER_UBUNTU_22_04)
-        elif os_version == UBUNTU_VERSIONS.UBUNTU_24_04.value and arch == Architecture.X64:
+        elif os_version == UbuntuVersions.UBUNTU_24_04.value and arch == Architecture.X64:
             return Expected[str, str].make_value(GITHUB_RUNNER_UBUNTU_24_04)
-        elif os_version == UBUNTU_VERSIONS.UBUNTU_22_04.value and arch == Architecture.ARM64:
+        elif os_version == UbuntuVersions.UBUNTU_22_04.value and arch == Architecture.ARM64:
             return Expected[str, str].make_value(GITHUB_RUNNER_UBUNTU_22_04_ARM64)
-        elif os_version == UBUNTU_VERSIONS.UBUNTU_24_04.value and arch == Architecture.ARM64:
+        elif os_version == UbuntuVersions.UBUNTU_24_04.value and arch == Architecture.ARM64:
             return Expected[str, str].make_value(GITHUB_RUNNER_UBUNTU_24_04_ARM64)
-    elif os == OS.WINDOWS and os_version == WINDOWS_VERSIONS.WIN10.value and arch == Architecture.X64:
+    elif os == OS.WINDOWS and os_version == WindowsVersions.WIN10.value and arch == Architecture.X64:
         if generator == Generator.MSVC_17_2022:
             return Expected[str, str].make_value(GITHUB_RUNNER_WINDOWS_2022)
         elif generator == Generator.MSVC_18_2026:
@@ -143,7 +143,7 @@ def orchestrator_matrix_to_github_wf_matrix(
     return OrchestratorMatrixToGitHubWFExpected.make_value(res)
 
 
-def copy_portable_csOrchestrator(output_folder: Path) -> None:
+def copy_portable_csorchestrator(output_folder: Path) -> None:
 
     source = files("csorchestrator").joinpath("portable")
     destination = output_folder / "csorchestratorsdk" / "portable"
@@ -191,17 +191,17 @@ def validate_and_generate_github_workflow(
     res.execution_description = orchestrator.extract_minimal_description()
     reporter.report_execution_description(res.execution_description)
 
-    orchestratorValidatedOpt = create_validated_orchestrator(orchestrator)
-    res.report_pre_execution.append_report(orchestratorValidatedOpt.main_report)
-    res.report_validation = orchestratorValidatedOpt.validation_reports
+    orchestrator_validated_opt = create_validated_orchestrator(orchestrator)
+    res.report_pre_execution.append_report(orchestrator_validated_opt.main_report)
+    res.report_validation = orchestrator_validated_opt.validation_reports
     reporter.report_validation_report(res.report_validation)
 
-    if orchestratorValidatedOpt.orchestrator is None:
+    if orchestrator_validated_opt.orchestrator is None:
         reporter.report_pre_execution_report(res.report_pre_execution)
         reporter.finalize_execution()
         return res
 
-    orchestrator = orchestratorValidatedOpt.orchestrator
+    orchestrator = orchestrator_validated_opt.orchestrator
 
     # validated orchestrator
 
@@ -252,7 +252,7 @@ def validate_and_generate_github_workflow(
         # TODO: move to some configurable parameters
 
         release_creation_context = ReleaseCreationContext(
-            orchestrator_description=orchestrator.createOrchestratorDescription(),
+            orchestrator_description=orchestrator.create_orchestrator_description(),
             matrix_list=[item.original_os_architecture_compiler_generator_list for item in wf_matrix],
             script_folder_path=script_folder_path,
         )
@@ -274,7 +274,7 @@ def validate_and_generate_github_workflow(
     )
     wf.on_job_matrix_exec(job=wf_job)
 
-    wf_context = JobOrchestratorMatrixExecutionContext(orchestrator.createOrchestratorDescription(), wf_matrix)
+    wf_context = JobOrchestratorMatrixExecutionContext(orchestrator.create_orchestrator_description(), wf_matrix)
 
     reporter.report_start_execution("orchestrator execution without matrix")
     # execute the orchestrator visitor, which will execute the step to clone the repo, build, etc...
@@ -295,7 +295,7 @@ def validate_and_generate_github_workflow(
     output_path.write_text(lines, encoding="utf-8")
 
     if portable_output_folder is not None:
-        copy_portable_csOrchestrator(portable_output_folder)
+        copy_portable_csorchestrator(portable_output_folder)
 
     reporter.finalize_execution()
 

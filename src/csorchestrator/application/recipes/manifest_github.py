@@ -223,7 +223,7 @@ def download_manifest(manifest_description: ManifestGithub, output_folder: Path)
 
     if dir_creation_res.error is not None:
         report.append_error(dir_creation_res.error)
-        return OptionalManifestPathWithReport.createReport(report)
+        return OptionalManifestPathWithReport.create_report(report)
 
     assert dir_creation_res.value is not None
     target_dir = dir_creation_res.value
@@ -233,7 +233,7 @@ def download_manifest(manifest_description: ManifestGithub, output_folder: Path)
         manifest_description.project_name
         + "-"
         + manifest_description.project_version
-        + ReleaseManifest.CS_ORCHESTRATOR_MANIFEST_EXTENSION
+        + ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION
     )
     target_filename = target_dir / source_filename
 
@@ -257,22 +257,22 @@ def download_manifest(manifest_description: ManifestGithub, output_folder: Path)
         request.urlretrieve(download_url, target_filename)
     except HTTPError as e:
         report.append_error(f"HTTP error: {e.code} - {e.reason}")
-        return OptionalManifestPathWithReport.createReport(report)
+        return OptionalManifestPathWithReport.create_report(report)
 
     except URLError as e:
         report.append_error(f"Network error: {e.reason}")
-        return OptionalManifestPathWithReport.createReport(report)
+        return OptionalManifestPathWithReport.create_report(report)
 
     # Check file exists and is not empty
     if not os.path.exists(target_filename):
         report.append_error("Download failed: file does not exist")
-        return OptionalManifestPathWithReport.createReport(report)
+        return OptionalManifestPathWithReport.create_report(report)
 
     if os.path.getsize(target_filename) == 0:
         report.append_error("Download failed: file is empty")
-        return OptionalManifestPathWithReport.createReport(report)
+        return OptionalManifestPathWithReport.create_report(report)
 
-    return OptionalManifestPathWithReport.createResultAndReport(target_filename, report)
+    return OptionalManifestPathWithReport.create_result_and_report(target_filename, report)
 
 
 def download_csorchestrator_managed_libraries(

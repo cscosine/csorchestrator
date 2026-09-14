@@ -29,7 +29,7 @@ def replace_template_variable(
 
 
 def relocate_portable_imports(code: str) -> str:
-    """Rewrite portable imports from csOrchestrator to csorchestratorsdk."""
+    """Rewrite portable imports from csorchestrator to csorchestratorsdk."""
     return code.replace(
         "from csorchestrator.portable",
         "from csorchestratorsdk.portable",

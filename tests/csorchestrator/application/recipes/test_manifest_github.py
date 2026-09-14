@@ -232,7 +232,7 @@ def _release_manifest_with_bundle(bundle_file_name: str | None) -> ReleaseManife
     return ReleaseManifest(
         project_name=PROJECT_NAME,
         project_version=PROJECT_VERSION,
-        additional_files=["csBaseLibs/cs_orchestrator_config.py"],
+        additional_files=["csBaseLibs/csorchestrator_config.py"],
         output_bundle_file_name=bundle_file_name,
         variants=[],
     )
@@ -241,7 +241,7 @@ def _release_manifest_with_bundle(bundle_file_name: str | None) -> ReleaseManife
 def _create_bundle_tar_gz(path: Path) -> Path:
     with tarfile.open(path, "w:gz") as tar:
         content = b"# config placeholder\n"
-        info = tarfile.TarInfo("csBaseLibs/cs_orchestrator_config.py")
+        info = tarfile.TarInfo("csBaseLibs/csorchestrator_config.py")
         info.size = len(content)
         tar.addfile(info, io.BytesIO(content))
     return path
@@ -282,7 +282,7 @@ def test_download_manifest_bundle_downloads_and_extracts(tmp_path, monkeypatch):
     assert not report.has_errors()
     bundle_file = extract_folder / "3rdPartyBaseLibs-0.1.0-bundle.tar.gz"
     assert not bundle_file.exists()  # archive is removed after extraction
-    extracted = extract_folder / "csBaseLibs/cs_orchestrator_config.py"
+    extracted = extract_folder / "csBaseLibs/csorchestrator_config.py"
     assert extracted.is_file()
     assert extracted.read_text() == "# config placeholder\n"
 

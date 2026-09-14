@@ -1,13 +1,13 @@
-# csOrchestrator
+# csorchestrator
 
 ## 📦 Project Overview
 
-csOrchestrator is a centralized project manager
+csorchestrator is a centralized project manager
 
 ## 📁 Repository Structure
 
 ```
-csOrchestrator/
+csorchestrator/
 ├── src/csorchestrator/              # installable package (src-layout)
 │   ├── application/                 # CLI, recipes and orchestrator factory
 │   ├── domain/                      # domain model: Orchestrator, phases, steps, contexts
@@ -65,8 +65,8 @@ to also keep the terminal with `venv` activated available
 
 ```bash
 # 1. Clone repository
-git clone git@github.com:cscosine/csOrchestrator.git
-cd csOrchestrator
+git clone git@github.com:cscosine/csorchestrator.git
+cd csorchestrator
 
 # 2. Create virtual environment
 python3.XX -m venv .venv # 3.XX >= 3.11
@@ -97,13 +97,13 @@ If you prefer step-by-step instructions:
 #### Clone Repository
 
 ``` bash
-git clone git@github.com:cscosine/csOrchestrator.git
+git clone git@github.com:cscosine/csorchestrator.git
 ```
 
 or
 
 ``` bash
-git clone https://github.com/cscosine/csOrchestrator.git
+git clone https://github.com/cscosine/csorchestrator.git
 ```
 
 ---
@@ -253,7 +253,7 @@ If any check fails, the commit is blocked until the issues are resolved.
 
 ## 🧩 Reusable Module & Testing
 
-The csOrchestrator logic is a installable package in `src/csorchestrator/`. This design allows the library to be used independently-either within this repo or published on PyPI.
+The csorchestrator logic is a installable package in `src/csorchestrator/`. This design allows the library to be used independently-either within this repo or published on PyPI.
 
 ### Package structure (src-layout)
 

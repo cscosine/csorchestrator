@@ -23,7 +23,7 @@ class StepCapabilityGithubWorkflow(StepCapability):
     def to_githubwf(
         self, wf_job: JobOrchestratorMatrixExecutionContext, reporter_sink: ReporterSinkBase
     ) -> OptionalListGithubStepsWithReport:
-        return OptionalListGithubStepsWithReport.createReport(
+        return OptionalListGithubStepsWithReport.create_report(
             Report().append_error("StepCapabilityGithubWorkflow.to_githubwf need to be imlemented in subclasses")
         )
 
@@ -49,7 +49,7 @@ class OrchestratorVisitorGitHubWorkflowPreparation(OrchestratorVisitorBase):
         capability = step.get_capability(StepCapabilityGithubWorkflow)
         if capability is None:
             return Report().append_info(f"skip step {step.name} because it does not support github workflow")
-        stepsAndReport = capability.to_githubwf(self.context, reporter_sink)
-        if stepsAndReport.result is not None:
-            self.wf_job.steps += stepsAndReport.result
-        return stepsAndReport.report
+        steps_and_report = capability.to_githubwf(self.context, reporter_sink)
+        if steps_and_report.result is not None:
+            self.wf_job.steps += steps_and_report.result
+        return steps_and_report.report

@@ -59,18 +59,18 @@ def create_os_and_path(base_folder_path: Path) -> OptionalOsArchitectureAndPathW
     if pr.error is not None:
         report.append_error(pr.error)
 
-    osaExpected = detect_context_os_architecture()
+    osa_expected = detect_context_os_architecture()
 
-    if osaExpected.error is not None:
-        report.append_error(osaExpected.error)
+    if osa_expected.error is not None:
+        report.append_error(osa_expected.error)
 
-    if pr.value is not None and osaExpected.value is not None:
-        return OptionalOsArchitectureAndPathWithReport.createResultAndReport(
-            OsArchitectureAndPath(os_architecture=osaExpected.value, path=pr.value),
+    if pr.value is not None and osa_expected.value is not None:
+        return OptionalOsArchitectureAndPathWithReport.create_result_and_report(
+            OsArchitectureAndPath(os_architecture=osa_expected.value, path=pr.value),
             report,
         )
     else:
-        return OptionalOsArchitectureAndPathWithReport.createReport(report)
+        return OptionalOsArchitectureAndPathWithReport.create_report(report)
 
 
 def validate_and_execute_orchestrator(
@@ -83,17 +83,17 @@ def validate_and_execute_orchestrator(
     er.execution_description = orchestrator.extract_minimal_description()
     reporter.report_execution_description(er.execution_description)
 
-    orchestratorValidatedOpt = create_validated_orchestrator(orchestrator)
-    er.report_pre_execution.append_report(orchestratorValidatedOpt.main_report)
-    er.report_validation = orchestratorValidatedOpt.validation_reports
+    orchestrator_validated_opt = create_validated_orchestrator(orchestrator)
+    er.report_pre_execution.append_report(orchestrator_validated_opt.main_report)
+    er.report_validation = orchestrator_validated_opt.validation_reports
     reporter.report_validation_report(er.report_validation)
 
-    if orchestratorValidatedOpt.orchestrator is None:
+    if orchestrator_validated_opt.orchestrator is None:
         reporter.report_pre_execution_report(er.report_pre_execution)
         reporter.finalize_execution()
         return er
 
-    orchestrator = orchestratorValidatedOpt.orchestrator
+    orchestrator = orchestrator_validated_opt.orchestrator
 
     # validated orchestrator, create context
 
@@ -135,7 +135,7 @@ def validate_and_execute_orchestrator(
         # e.g. detected os is win 11, but we select win 10 in the matrix, which is compatible
 
         context = ContextLocalExecution(
-            orchestrator_description=orchestrator.createOrchestratorDescription(),
+            orchestrator_description=orchestrator.create_orchestrator_description(),
             script_folder_path=script_folder_path,
             base_folder_path=os_and_path.path,
             os_architecture=os_architecture_compiler_generator.context_os_architecture,
@@ -185,7 +185,7 @@ def validate_and_execute_orchestrator(
             else:
                 release_context = ReleaseCreationContextLocalExecution(
                     os_architecture_compiler_generator_list=matrix.os_architecture_compiler_generator_list,
-                    orchestrator_description=orchestrator.createOrchestratorDescription(),
+                    orchestrator_description=orchestrator.create_orchestrator_description(),
                     os_architecture=os_and_path.os_architecture,
                     script_folder_path=script_folder_path,
                     base_path=os_and_path.path,

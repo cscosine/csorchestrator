@@ -7,10 +7,10 @@ from csorchestrator.domain.context.context_compiler_generator import (
 from csorchestrator.domain.context.context_os_architecture import (
     ARCHITECTURE_VARIANT_GENERIC,
     OS,
-    UBUNTU_VERSIONS,
-    WINDOWS_VERSIONS,
     Architecture,
     ContextOsArchitecture,
+    UbuntuVersions,
+    WindowsVersions,
 )
 from csorchestrator.domain.context.context_os_architecture_compiler_generator import (
     ContextOsArchitectureCompilerGenerator,
@@ -145,7 +145,7 @@ def test_get_all_supported_workflow_descriptions() -> None:
     context = ContextOsArchitectureCompilerGenerator(
         context_os_architecture=ContextOsArchitecture(
             os=OS.LINUX,
-            os_version=UBUNTU_VERSIONS.UBUNTU_22_04.value,
+            os_version=UbuntuVersions.UBUNTU_22_04.value,
             architecture=Architecture.X64,
             architecture_variant=ARCHITECTURE_VARIANT_GENERIC,
         ),
@@ -173,11 +173,11 @@ def test_get_all_supported_workflow_descriptions() -> None:
 def test_get_supported_os_version_list() -> None:
     linux_versions = get_supported_os_version_list(OS.LINUX)
     assert len(linux_versions) > 0
-    assert UBUNTU_VERSIONS.UBUNTU_24_04.value in linux_versions
+    assert UbuntuVersions.UBUNTU_24_04.value in linux_versions
 
     windows_versions = get_supported_os_version_list(OS.WINDOWS)
     assert len(windows_versions) > 0
-    assert WINDOWS_VERSIONS.WIN10.value in windows_versions
+    assert WindowsVersions.WIN10.value in windows_versions
 
     macos_versions = get_supported_os_version_list(OS.MACOS)
     assert len(macos_versions) == 0  # TODO add MACOS support

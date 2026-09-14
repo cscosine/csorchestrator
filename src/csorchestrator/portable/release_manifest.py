@@ -42,12 +42,12 @@ class ReleaseManifest:
     MANIFEST_VERSION: ClassVar[str] = "1.0"
     manifest_version: str = MANIFEST_VERSION
 
-    CS_ORCHESTRATOR_MANIFEST_EXTENSION: ClassVar[str] = ".csOrchestratorManifest"
-    CS_ORCHESTRATOR_MANIFEST_ROOT: ClassVar[str] = "csOrchestratorManifest"
+    CSORCHESTRATOR_MANIFEST_EXTENSION: ClassVar[str] = ".csOrchestratorManifest"
+    CSORCHESTRATOR_MANIFEST_ROOT: ClassVar[str] = "csorchestrator_manifest"
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            ReleaseManifest.CS_ORCHESTRATOR_MANIFEST_ROOT: {
+            ReleaseManifest.CSORCHESTRATOR_MANIFEST_ROOT: {
                 "manifest_version": self.manifest_version,
                 "project_name": self.project_name,
                 "project_version": self.project_version,
@@ -59,7 +59,7 @@ class ReleaseManifest:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ReleaseManifest":
-        in_data = data[ReleaseManifest.CS_ORCHESTRATOR_MANIFEST_ROOT]
+        in_data = data[ReleaseManifest.CSORCHESTRATOR_MANIFEST_ROOT]
         return cls(
             manifest_version=in_data["manifest_version"],
             project_name=in_data["project_name"],

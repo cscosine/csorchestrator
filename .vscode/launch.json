@@ -1532,26 +1532,6 @@
       "justMyCode": false
     },
     {
-      "name": "\ud83e\uddea tests/csorchestrator/utils/git/test_repo_clone_checkout \u2192 test_try_git_clone_checkout_HEAD[False]",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "pytest",
-      "args": [
-        "tests/csorchestrator/utils/git/test_repo_clone_checkout.py::test_try_git_clone_checkout_HEAD[False]"
-      ],
-      "justMyCode": false
-    },
-    {
-      "name": "\ud83e\uddea tests/csorchestrator/utils/git/test_repo_clone_checkout \u2192 test_try_git_clone_checkout_HEAD[True]",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "pytest",
-      "args": [
-        "tests/csorchestrator/utils/git/test_repo_clone_checkout.py::test_try_git_clone_checkout_HEAD[True]"
-      ],
-      "justMyCode": false
-    },
-    {
       "name": "\ud83e\uddea tests/csorchestrator/utils/git/test_repo_clone_checkout \u2192 test_try_git_clone_checkout_branch_dev[False]",
       "type": "debugpy",
       "request": "launch",
@@ -1608,6 +1588,26 @@
       "module": "pytest",
       "args": [
         "tests/csorchestrator/utils/git/test_repo_clone_checkout.py::test_try_git_clone_checkout_branch_origin_main[True]"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/utils/git/test_repo_clone_checkout \u2192 test_try_git_clone_checkout_head[False]",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/utils/git/test_repo_clone_checkout.py::test_try_git_clone_checkout_head[False]"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/utils/git/test_repo_clone_checkout \u2192 test_try_git_clone_checkout_head[True]",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/utils/git/test_repo_clone_checkout.py::test_try_git_clone_checkout_head[True]"
       ],
       "justMyCode": false
     },

@@ -306,7 +306,7 @@ def step_custom_command_to_githubwf(
         )
     ]
 
-    return OptionalListGithubStepsWithReport.createResultAndReport(steps, Report())
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())
 
 
 # ------------------------------
@@ -344,4 +344,4 @@ def step_win_ps_command_to_githubwf(
         )
     ]
 
-    return OptionalListGithubStepsWithReport.createResultAndReport(steps, Report())
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())

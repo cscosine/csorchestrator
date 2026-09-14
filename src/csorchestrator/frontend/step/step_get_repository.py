@@ -65,7 +65,7 @@ class StepGetRepositoryGitHubCapabilityLocalExecution(StepCapabilityLocalExecuti
 @dataclass
 class StepGetRepositoryGitHubCapabilityValidation(StepCapabilityValidation):
     @classmethod
-    def createValidator(cls) -> StepValidatorBase | None:
+    def create_validator(cls) -> StepValidatorBase | None:
         return StepGetRepositoryValidator()
 
 
@@ -153,7 +153,7 @@ def step_get_repository_self_to_githubwf(
             name=step.name,
         )
     ]
-    return OptionalListGithubStepsWithReport.createResultAndReport(steps, Report())
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())
 
 
 def step_get_repository_to_githubwf(
@@ -173,7 +173,7 @@ def step_get_repository_to_githubwf(
             ),
         )
     ]
-    return OptionalListGithubStepsWithReport.createResultAndReport(steps, Report())
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())
 
 
 def validate_step_get_repository(step: StepGetRepositoryGitHub) -> Report:

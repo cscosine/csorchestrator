@@ -258,7 +258,7 @@ def step_get_precompiled_lib_to_githubwf(
         for matrix_id, matrix in enumerate(wf_job.matrix_includes):
             new_context = step.mapping_function(deepcopy(matrix.original_os_architecture_compiler_generator_list))
             if new_context is None:
-                return OptionalListGithubStepsWithReport.createReport(
+                return OptionalListGithubStepsWithReport.create_report(
                     Report().append_error(f"error evaluating mapping function for {step.name} in github translation")
                 )
             filenames_dict_lines += [
@@ -329,4 +329,4 @@ def step_get_precompiled_lib_to_githubwf(
             ],
         )
     )
-    return OptionalListGithubStepsWithReport.createResultAndReport(steps, Report())
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())

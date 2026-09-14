@@ -117,10 +117,10 @@ class OrchestratorExecutorReporterMarkdown(OrchestratorExecutorReporterBase):
     def report_skip_execution(self, exec_desc: str) -> None:
         self.sink.lines.append(f"## Skip Execution {exec_desc}\n")
 
-    def report_execution_report(self, reportVisit: OrchestratorExecutorVisitReports) -> None:
+    def report_execution_report(self, report_visit: OrchestratorExecutorVisitReports) -> None:
         self.sink.lines.append("## Execution Report\n")
 
-        for phase_report in reportVisit:
+        for phase_report in report_visit:
             self.sink.increase_indentation()
             for step_report in phase_report:
                 self.sink.increase_indentation()

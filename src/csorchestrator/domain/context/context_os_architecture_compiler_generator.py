@@ -4,7 +4,7 @@ from csorchestrator.domain.context.context_compiler_generator import ContextComp
 from csorchestrator.domain.context.context_os_architecture import ContextOsArchitecture
 from csorchestrator.domain.orchestrator.orchestrator import MatrixExecutionBase
 
-CS_ORCHESTRATOR_SCHEMA_VERSION = "csv1"
+CSORCHESTRATOR_SCHEMA_VERSION = "csv1"
 
 
 @dataclass
@@ -35,7 +35,7 @@ def create_context_os_architecture_compiler_generator_string_from_components(
     build_generator: str,
 ) -> str:
     parts: list[str] = []
-    parts.append(CS_ORCHESTRATOR_SCHEMA_VERSION.lower())
+    parts.append(CSORCHESTRATOR_SCHEMA_VERSION.lower())
     parts.append(os.lower())
     parts.append(os_version.lower())
     parts.append(architecture.lower())

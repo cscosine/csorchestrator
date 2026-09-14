@@ -61,9 +61,9 @@ def step_upload_artifacts_to_githubwf(
             with_name=artifact_name,
             with_path=[
                 (step.base_install_dir / "*.tar.gz").as_posix(),
-                (step.base_install_dir / ("*" + ReleaseManifest.CS_ORCHESTRATOR_MANIFEST_EXTENSION)).as_posix(),
+                (step.base_install_dir / ("*" + ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION)).as_posix(),
             ],
         )
     ]
 
-    return OptionalListGithubStepsWithReport.createResultAndReport(steps, Report())
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())

@@ -58,7 +58,7 @@ class CLIConfig:
     markdown_path: Path | None = None
 
 
-@click.group(help="csOrchestrator command line interface")  # type: ignore[untyped-decorator]
+@click.group(help="csorchestrator command line interface")  # type: ignore[untyped-decorator]
 @click.option(  # type: ignore[untyped-decorator]
     "--sink",
     type=click.Choice(SINK_TYPES),

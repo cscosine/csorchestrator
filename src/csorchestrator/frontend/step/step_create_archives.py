@@ -141,4 +141,4 @@ def step_create_archives_to_githubwf(
         )
     ]
 
-    return OptionalListGithubStepsWithReport.createResultAndReport(steps, Report())
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())

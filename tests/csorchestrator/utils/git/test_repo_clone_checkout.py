@@ -141,7 +141,7 @@ def test_try_git_clone_checkout_branch_origin_main(tmp_path: Path, repo_url: Rep
 @pytest.mark.slow
 @pytest.mark.git
 @pytest.mark.parametrize("depth_one", [True, False])
-def test_try_git_clone_checkout_HEAD(tmp_path: Path, repo_url: RepoUrlParts, depth_one: bool) -> None:
+def test_try_git_clone_checkout_head(tmp_path: Path, repo_url: RepoUrlParts, depth_one: bool) -> None:
     cfg = RepoTestData()
 
     target_path = tmp_path / cfg.destination_folder

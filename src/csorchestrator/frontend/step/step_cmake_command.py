@@ -177,7 +177,7 @@ def step_cmake_workflow_to_githubwf_powershell(
                 selected_configs += [supported_config]
 
         if len(selected_configs) == 0:
-            return OptionalListGithubStepsWithReport.createReport(
+            return OptionalListGithubStepsWithReport.create_report(
                 Report().append_error(
                     f"Requested config {step.config.value} is not supported for generator type {generator_type.value}"
                 )
@@ -188,7 +188,7 @@ def step_cmake_workflow_to_githubwf_powershell(
             run_str_list += ["  cmake --workflow " + wf_name]
         run_str_list += ["}"]
     if not first_cycle:
-        return OptionalListGithubStepsWithReport.createReport(
+        return OptionalListGithubStepsWithReport.create_report(
             Report().append_error("Defensive: no generators in for loop in step_cmake_workflow_to_githubwf?!?")
         )
 
@@ -207,7 +207,7 @@ def step_cmake_workflow_to_githubwf_powershell(
         )
     ]
 
-    return OptionalListGithubStepsWithReport.createResultAndReport(steps, Report())
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())
 
 
 def step_cmake_workflow_to_githubwf(
@@ -236,7 +236,7 @@ def step_cmake_workflow_to_githubwf(
                 selected_configs += [supported_config]
 
         if len(selected_configs) == 0:
-            return OptionalListGithubStepsWithReport.createReport(
+            return OptionalListGithubStepsWithReport.create_report(
                 Report().append_error(
                     f"Requested config {step.config.value} is not supported for generator type {generator_type.value}"
                 )
@@ -246,7 +246,7 @@ def step_cmake_workflow_to_githubwf(
             wf_name = workflow_name_from_matrix_components(config.value)
             run_str_list += ["  cmake --workflow " + wf_name]
     if not first_cycle:
-        return OptionalListGithubStepsWithReport.createReport(
+        return OptionalListGithubStepsWithReport.create_report(
             Report().append_error("Defensive: no generators in for loop in step_cmake_workflow_to_githubwf?!?")
         )
 
@@ -268,4 +268,4 @@ def step_cmake_workflow_to_githubwf(
         )
     ]
 
-    return OptionalListGithubStepsWithReport.createResultAndReport(steps, Report())
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())

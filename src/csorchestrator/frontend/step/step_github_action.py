@@ -49,4 +49,4 @@ def step_add_github_action_to_githubwf(
             with_list=step.with_list,
         )
     ]
-    return OptionalListGithubStepsWithReport.createResultAndReport(steps, Report())
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())

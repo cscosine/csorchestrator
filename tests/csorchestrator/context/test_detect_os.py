@@ -7,9 +7,9 @@ from csorchestrator.domain.context.context_os_architecture import (
     OS,
     OS_PLATFORM_MACOS,
     UBUNTU_STRING_PREFIX,
-    UBUNTU_VERSIONS,
     VERSION_STRING_PREFIX,
-    WINDOWS_VERSIONS,
+    UbuntuVersions,
+    WindowsVersions,
     detect_os,
 )
 
@@ -47,7 +47,7 @@ VERSION_ID="22.04"
         result = detect_os()
 
     assert result.error is None
-    assert result.value == (OS.LINUX, UBUNTU_VERSIONS.UBUNTU_22_04.value)
+    assert result.value == (OS.LINUX, UbuntuVersions.UBUNTU_22_04.value)
 
 
 @pytest.mark.skipif(platform.system().lower() != OS.WINDOWS.value, reason=OS.WINDOWS.value + "-only test")
@@ -89,7 +89,7 @@ def test_detect_os_mock_windows_from_linux():
         result = detect_os()
 
     assert result.error is None
-    assert result.value == (OS.WINDOWS, WINDOWS_VERSIONS.WIN10.value)
+    assert result.value == (OS.WINDOWS, WindowsVersions.WIN10.value)
 
 
 @pytest.mark.skipif(platform.system().lower() != OS.LINUX.value, reason=OS.LINUX.value + "-only test")
@@ -131,7 +131,7 @@ def test_detect_os_mock_windows_from_macos():
         result = detect_os()
 
     assert result.error is None
-    assert result.value == (OS.WINDOWS, WINDOWS_VERSIONS.WIN10.value)
+    assert result.value == (OS.WINDOWS, WindowsVersions.WIN10.value)
 
 
 @pytest.mark.skipif(platform.system().lower() != OS_PLATFORM_MACOS, reason=OS.MACOS.value + "-only test")
@@ -150,7 +150,7 @@ VERSION_ID="24.04"
         result = detect_os()
 
     assert result.error is None
-    assert result.value == (OS.LINUX, UBUNTU_VERSIONS.UBUNTU_24_04.value)
+    assert result.value == (OS.LINUX, UbuntuVersions.UBUNTU_24_04.value)
 
 
 # =========================================================

@@ -11,10 +11,10 @@ from csorchestrator.domain.context.context_compiler_generator import (
 from csorchestrator.domain.context.context_os_architecture import (
     ARCHITECTURE_VARIANT_GENERIC,
     OS,
-    UBUNTU_VERSIONS,
-    WINDOWS_VERSIONS,
     Architecture,
     ContextOsArchitecture,
+    UbuntuVersions,
+    WindowsVersions,
 )
 from csorchestrator.domain.context.context_os_architecture_compiler_generator import (
     ContextOsArchitectureCompilerGenerator,
@@ -36,9 +36,9 @@ from csorchestrator.frontend.github_workflow_translation.github_workflow_matrix_
 def get_supported_os_version_list(os: OS) -> list[str]:
     match os:
         case OS.LINUX:
-            return [UBUNTU_VERSIONS.UBUNTU_22_04.value, UBUNTU_VERSIONS.UBUNTU_24_04.value]
+            return [UbuntuVersions.UBUNTU_22_04.value, UbuntuVersions.UBUNTU_24_04.value]
         case OS.WINDOWS:
-            return [WINDOWS_VERSIONS.WIN10.value]
+            return [WindowsVersions.WIN10.value]
         case OS.MACOS:
             return []  # TODO add MACOS support
         case _:
@@ -119,7 +119,7 @@ def get_supported_compilers_windows_ninja_generator() -> list[tuple[Compiler, st
 
 def get_supported_context_os_architecture_list() -> list[ContextOsArchitectureCompilerGenerator]:
 
-    retList: list[ContextOsArchitectureCompilerGenerator] = []
+    ret_list: list[ContextOsArchitectureCompilerGenerator] = []
 
     ## LINUX. use multi-config for x64 arch, use single config for arm64 arch
     for os_version in get_supported_os_version_list(OS.LINUX):
@@ -140,7 +140,7 @@ def get_supported_context_os_architecture_list() -> list[ContextOsArchitectureCo
                         compiler_version=ContextCompilerGenerator.COMPILER_VERSION_DEFAULT,
                         build_generator=generator,
                     )
-                    retList.append(
+                    ret_list.append(
                         ContextOsArchitectureCompilerGenerator(
                             context_os_architecture=os_arch, context_compiler_generator=ccg
                         )
@@ -165,7 +165,7 @@ def get_supported_context_os_architecture_list() -> list[ContextOsArchitectureCo
                     compiler_version=version,
                     build_generator=generator,
                 )
-                retList.append(
+                ret_list.append(
                     ContextOsArchitectureCompilerGenerator(
                         context_os_architecture=os_arch, context_compiler_generator=ccg
                     )
@@ -174,7 +174,7 @@ def get_supported_context_os_architecture_list() -> list[ContextOsArchitectureCo
     # for os_version in get_supported_os_version_list(OS.MACOS):
     #     _ = os_version  # TODO add MACOS support
 
-    return retList
+    return ret_list
 
 
 @dataclass
@@ -186,13 +186,13 @@ def get_supported_context_os_architecture_config(
     src: ContextOsArchitectureCompilerGenerator,
 ) -> list[ContextOsArchitectureCompilerGeneratorConfig]:
 
-    retList: list[ContextOsArchitectureCompilerGeneratorConfig] = []
+    ret_list: list[ContextOsArchitectureCompilerGeneratorConfig] = []
 
     configs_per_generator_type = get_supported_build_configs_for_generator_type(
         src.context_compiler_generator.build_generator.generator_type
     )
     for config in configs_per_generator_type:
-        retList.append(
+        ret_list.append(
             ContextOsArchitectureCompilerGeneratorConfig(
                 context_os_architecture=src.context_os_architecture,
                 context_compiler_generator=src.context_compiler_generator,
@@ -200,7 +200,7 @@ def get_supported_context_os_architecture_config(
             )
         )
 
-    return retList
+    return ret_list
 
 
 def is_config_selected_multi_config_generator(current_config: BuildConfig, requested_config: BuildConfig) -> bool:

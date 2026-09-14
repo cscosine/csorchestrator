@@ -49,7 +49,7 @@ def create_default_orchestrator(
     )
 
     if output_bundle_file_name is None:
-        output_bundle_file_name = Path(o.createOrchestratorDescription().name_and_version_string + "-bundle.tar.gz")
+        output_bundle_file_name = Path(o.create_orchestrator_description().name_and_version_string + "-bundle.tar.gz")
 
     o.wf_config = WorkflowConfig(
         trigger=WorkflowTrigger(

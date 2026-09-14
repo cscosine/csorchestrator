@@ -41,7 +41,7 @@ class Orchestrator:
     phases: list[Phase] = field(default_factory=list)
     wf_config: WorkflowConfig | None = None
 
-    def createOrchestratorDescription(self) -> OrchestratorDescription:
+    def create_orchestrator_description(self) -> OrchestratorDescription:
         return OrchestratorDescription(
             orchestrator_name=self.name,
             orchestrator_version=self.version,

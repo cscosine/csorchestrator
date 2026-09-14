@@ -83,7 +83,7 @@ def create_version_file_name(
         orchestrator_name_and_version_string
         + "-"
         + context_os_architecture_compiler_generator_string
-        + ReleaseManifest.CS_ORCHESTRATOR_MANIFEST_EXTENSION
+        + ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION
     )
 
 
@@ -189,4 +189,4 @@ def step_get_versions_from_cmake_config_package_version_to_githubwf(
         )
     ]
 
-    return OptionalListGithubStepsWithReport.createResultAndReport(steps, Report())
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())

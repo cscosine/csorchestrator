@@ -56,13 +56,19 @@ target-version = "py311"
 # B  -> Bugbear (common bug patterns)
 # UP -> modern Python suggestions
 # SIM -> catches simplifications
+# N  -> PEP8 naming conventions
+# C4 -> flake8-comprehensions (more Pythonic comprehensions)
+# W  -> Pycodestyle warnings
 select = [
     "E",
     "F",
     "I",
     "B",
     "UP",
-    "SIM"
+    "SIM",
+    "N",
+    "C4",
+    "W",
 ]
 
 [tool.ruff.format]

@@ -101,7 +101,7 @@ def main() -> int:
 
     report.append_info(f"Selected remote: {selected}, url: {url.repo_url()}")
 
-    tmp_dir = tempfile.mkdtemp(prefix="cs_orchestrator_repo_")
+    tmp_dir = tempfile.mkdtemp(prefix="csorchestrator_repo_")
 
     try:
         repo = Repo.init(tmp_dir)

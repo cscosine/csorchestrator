@@ -1,18 +1,18 @@
 ---
 name: csorchestrator-development
 description: >-
-  Develops, audits, and maintains the csOrchestrator framework.
+  Develops, audits, and maintains the csorchestrator framework.
   Use when understanding the layered architecture, adding or changing steps, recipes,
   or CLI commands, validating layer/import contracts, running tests and pre-commit
   quality gates, or re-generating GitHub Actions workflows and the portable SDK that
   gets copied into client projects.
 ---
 
-# csOrchestrator Framework Development
+# csorchestrator Framework Development
 
 ## Overview
 
-csOrchestrator is a Python framework used by client projects (e.g. `3rdPartyBaseLibs`, `csQt6`)
+csorchestrator is a Python framework used by client projects (e.g. `3rdPartyBaseLibs`, `csQt6`)
 to define cross-platform C/C++ (CMake) build pipelines. A *project script* (e.g. `3rdPartyBaseLibs.py`,
 `qt6.py`) exposes a `create_orchestrator() -> OptionalResultWithReport[Orchestrator]` function that builds
 an `Orchestrator` object — phases made of steps, plus an execution matrix (OS × arch × compiler/generator)
@@ -29,7 +29,7 @@ and a workflow config. The framework then:
 - **Python**: `>= 3.11` in the active `.venv` (created by `./setup.sh`)
 - **Runtime**: `click`, `PyYAML`, `GitPython`, `colorama`
 - **Dev**: `pytest`, `pytest-cov`, `mypy` (strict), `ruff`, `pre-commit`, `import-linter`
-- **Network**: `git`-marked tests access `github.com/cscosine/csOrchestratorTestRepo`
+- **Network**: `git`-marked tests access `github.com/cscosine/csorchestratorTestRepo`
   (token secret `ACTIONS_ORG_ACCESS`); see `tests/csorchestrator/repo_test_data_config.py`
 
 ## Quick Start
@@ -43,12 +43,12 @@ pre-commit run --all-files       # quality gate (ruff, mypy, import-linter, ...)
 
 ## Workflow
 
-Follow these steps when interacting with or modifying the csOrchestrator framework.
+Follow these steps when interacting with or modifying the csorchestrator framework.
 
 ### 1. Understand the Layered Architecture (Fail-Loud Import Contract)
 
 The package is organized in strict layers, enforced by `import-linter` contracts in
-[`pyproject.toml`](file:///home/sceriani/myWorkspace/csOrchestrator/pyproject.toml)
+[`pyproject.toml`](pyproject.toml)
 (`[tool.importlinter]`). Higher layers may import lower layers, never the reverse.
 
 | Layer | Role | Landmark files |
@@ -66,26 +66,26 @@ The package is organized in strict layers, enforced by `import-linter` contracts
 
 ### 2. Map the Code Before Editing
 
-- [`application/cli/cli.py`](file:///home/sceriani/myWorkspace/csOrchestrator/src/csorchestrator/application/cli/cli.py):
+- [`application/cli/cli.py`](src/csorchestrator/application/cli/cli.py):
   click group with global `--sink {print,colored,colorama,none}` and `--markdown PATH`; commands
   `run` and `generate-github-workflow`. `orchestrator_main_with_default_run()` makes a project script
   behave like the CLI entry point (no args → `run`). Console script is `csorchestrator`.
-- [`application/recipes/create_orchestrator.py`](file:///home/sceriani/myWorkspace/csOrchestrator/src/csorchestrator/application/recipes/create_orchestrator.py):
+- [`application/recipes/create_orchestrator.py`](src/csorchestrator/application/recipes/create_orchestrator.py):
   `create_default_orchestrator()` (name, version, install dir, matrix, workflow trigger/release config)
   and `create_default_execution_matrix()`.
-- [`application/recipes/checkout_build.py`](file:///home/sceriani/myWorkspace/csOrchestrator/src/csorchestrator/application/recipes/checkout_build.py):
+- [`application/recipes/checkout_build.py`](src/csorchestrator/application/recipes/checkout_build.py):
   `checkout_repos()`, `build_repos()`, `create_and_upload_artifacts()`, `checkout_build_and_archive_repos()`.
-- [`application/recipes/manifest_github.py`](file:///home/sceriani/myWorkspace/csOrchestrator/src/csorchestrator/application/recipes/manifest_github.py):
+- [`application/recipes/manifest_github.py`](src/csorchestrator/application/recipes/manifest_github.py):
   `download_manifest()` for clients.
-- [`domain/orchestrator/orchestrator.py`](file:///home/sceriani/myWorkspace/csOrchestrator/src/csorchestrator/domain/orchestrator/orchestrator.py):
+- [`domain/orchestrator/orchestrator.py`](src/csorchestrator/domain/orchestrator/orchestrator.py):
   `Orchestrator` (name/version/execution_matrix/phases/wf_config), `create_phase()`.
-- [`domain/orchestrator/step_base.py`](file:///home/sceriani/myWorkspace/csOrchestrator/src/csorchestrator/domain/orchestrator/step_base.py):
+- [`domain/orchestrator/step_base.py`](src/csorchestrator/domain/orchestrator/step_base.py):
   `StepBase` with `add_extra()`/`add_capability()`.
-- [`frontend/step/`](file:///home/sceriani/myWorkspace/csOrchestrator/src/csorchestrator/frontend/step/):
+- [`frontend/step/`](src/csorchestrator/frontend/step/):
   concrete steps (`StepGetRepositoryGitHub`, `StepCMakeWorkflow`, `StepCustomCommand`/`StepBashScriptCommand`/
   `StepWinPSCommand`, `StepCreateArchives`, `StepUploadArtifacts`,
   `StepGetVersionsFromCMakeConfigPackageVersion`, `StepAddGitHubAction`, ...).
-- [`portable/`](file:///home/sceriani/myWorkspace/csOrchestrator/src/csorchestrator/portable/):
+- [`portable/`](src/csorchestrator/portable/):
   `PackageVersion`, `ReleaseManifest`, version grep utilities — copied verbatim into client projects.
 
 ### 3. How Steps Work (Capabilities Pattern)
@@ -99,20 +99,20 @@ A step subclasses `StepBase` and registers **capabilities** in `__post_init__` v
 
 Blueprint used by existing steps: an ABC companion class declaring the capability method as abstract,
 a concrete capability class, and the `StepBase` subclass registering it. Inspect
-[`step_custom_command.py`](file:///home/sceriani/myWorkspace/csOrchestrator/src/csorchestrator/frontend/step/step_custom_command.py)
+[`step_custom_command.py`](src/csorchestrator/frontend/step/step_custom_command.py)
 as a reference before adding a new step.
 
 ### 4. Portable Code & Generated Workflows
 
 - Code that must run **inside generated GitHub Actions jobs** lives in `portable/` and is embedded from
   templates in
-  [`frontend/step/templates/`](file:///home/sceriani/myWorkspace/csOrchestrator/src/csorchestrator/frontend/step/templates/).
+  [`frontend/step/templates/`](src/csorchestrator/frontend/step/templates/).
 - When such code is embedded, `relocate_portable_imports()` (in `frontend/step/templates/utils.py`)
   rewrites `from csorchestrator.portable...` → `from csorchestratorsdk.portable...`, because the portable
   folder is copied into client projects as `csorchestratorsdk/portable`.
-- `generate-github-workflow` (without `-o`) also re-copies the SDK via `copy_portable_csOrchestrator()`
+- `generate-github-workflow` (without `-o`) also re-copies the SDK via `copy_portable_csorchestrator()`
   into the project script folder — see
-  [`validate_and_generate_github_workflow.py`](file:///home/sceriani/myWorkspace/csOrchestrator/src/csorchestrator/frontend/github_workflow_translation/validate_and_generate_github_workflow.py).
+  [`validate_and_generate_github_workflow.py`](src/csorchestrator/frontend/github_workflow_translation/validate_and_generate_github_workflow.py).
   With `-o <file>` the workflow is written to the exact file and the SDK is **not** copied.
 
 ### 5. Running the Tests
@@ -120,7 +120,7 @@ as a reference before adding a new step.
 - pytest config lives in `pyproject.toml` (`[tool.pytest.ini_options]`); markers: `slow`, `git`, `requires`.
   `conftest.py` adds `--run-all`, `--run-slow`, `--run-git`, `--requires-mandatory`.
 - Slow/git tests are **skipped by default** — do not report them as failures.
-- The `git` tests need the `csOrchestratorTestRepo` fixture; if clone/checkout behavior changes, regenerate
+- The `git` tests need the `csorchestratorTestRepo` fixture; if clone/checkout behavior changes, regenerate
   the fixture with `tools/regenerate_test_repo.py` and update `initial_commit_sha` in
   `tests/csorchestrator/repo_test_data_config.py`.
 
@@ -139,7 +139,7 @@ pre-commit run --all-files
 ### 7. Documentation Synchronization
 
 When the package layout, CLI, or recipe API changes, update
-[`README.md`](file:///home/sceriani/myWorkspace/csOrchestrator/README.md) — repository structure, package
+[`README.md`](README.md) — repository structure, package
 structure, and "Using the package" CLI/library examples must stay accurate.
 
 ## Rate Limiting

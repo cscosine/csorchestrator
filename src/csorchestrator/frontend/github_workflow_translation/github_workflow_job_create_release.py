@@ -66,7 +66,7 @@ class JobReleaseCreationFromArtifacts:
         extra_extension_for_release_files = None
         if capability is not None:
             steps.extend(capability.to_steps_dict(self.release_creation_context))
-            extra_extension_for_release_files = ReleaseManifest.CS_ORCHESTRATOR_MANIFEST_EXTENSION
+            extra_extension_for_release_files = ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION
             steps.append(
                 StepGitHubUploadArtifacts(
                     name="Upload manifest as artifacts",

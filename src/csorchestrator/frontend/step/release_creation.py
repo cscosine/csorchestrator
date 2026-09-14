@@ -105,7 +105,7 @@ def release_creation_on_tag_config_to_githubwf(
         input_manifest_path_variant.append((input_path, context_os_architecture_compiler_generator_string))
 
     output_filepath = Path(
-        f"{release_creation_context.orchestrator_description.name_and_version_string}{ReleaseManifest.CS_ORCHESTRATOR_MANIFEST_EXTENSION}"
+        f"{release_creation_context.orchestrator_description.name_and_version_string}{ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION}"
     )
 
     template_file = files("csorchestrator.frontend.step").joinpath("templates").joinpath("create_release_manifest.py")
@@ -206,7 +206,7 @@ def release_creation_on_tag_config_execute_local(
 
     output_filepath = step.base_install_dir / Path(
         relase_context.orchestrator_description.name_and_version_string
-        + ReleaseManifest.CS_ORCHESTRATOR_MANIFEST_EXTENSION
+        + ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION
     )
 
     base_path_additional_files = relase_context.script_folder_path
