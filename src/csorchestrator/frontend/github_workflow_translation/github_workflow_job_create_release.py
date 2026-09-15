@@ -7,6 +7,7 @@ from csorchestrator.domain.orchestrator.workflow_config import (
     ReleaseCreationOnTagConfigBaseCapability,
 )
 from csorchestrator.frontend.github_workflow_translation.github_workflow_steps_translations import (
+    CleanArtifactsFolder,
     CreateGitHubRelease,
     DownloadAllArtifacts,
     ShowDownloadedFiles,
@@ -56,6 +57,9 @@ class JobReleaseCreationFromArtifacts:
             ]
 
         steps += [
+            # clean folder is necessary in case a second exec of the release job is required
+            # e.g. a retry in case of infra issues
+            CleanArtifactsFolder(artifacts_dir).to_dict(),
             DownloadAllArtifacts(artifacts_dir).to_dict(),
             ShowDownloadedFiles(artifacts_dir).to_dict(),
         ]

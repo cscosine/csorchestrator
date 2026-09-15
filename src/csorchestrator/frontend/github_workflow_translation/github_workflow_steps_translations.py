@@ -140,6 +140,17 @@ class ShowDownloadedFiles(GithubStepInterface):
 
 
 @dataclass(frozen=True)
+class CleanArtifactsFolder(GithubStepInterface):
+    artifacts_folder: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": "Clean Artifacts Folder",
+            "run": f"rm -rf {self.artifacts_folder}",
+        }
+
+
+@dataclass(frozen=True)
 class CreateGitHubRelease(GithubStepInterface):
     artifacts_folder: str
     if_str: str
