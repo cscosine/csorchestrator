@@ -462,6 +462,26 @@
       "justMyCode": false
     },
     {
+      "name": "\ud83e\uddea tests/csorchestrator/cli/test_cli \u2192 test_describe_command_missing_create_orchestrator",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/cli/test_cli.py::test_describe_command_missing_create_orchestrator"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/cli/test_cli \u2192 test_describe_command_prints_description",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/cli/test_cli.py::test_describe_command_prints_description"
+      ],
+      "justMyCode": false
+    },
+    {
       "name": "\ud83e\uddea tests/csorchestrator/cli/test_cli \u2192 test_run_command_loads_project_script",
       "type": "debugpy",
       "request": "launch",
@@ -988,6 +1008,36 @@
       "module": "pytest",
       "args": [
         "tests/csorchestrator/orchestrator/test_orchestrator.py::test_orchestrator_add_phases"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/orchestrator/test_orchestrator \u2192 test_orchestrator_append_merges_phases",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/orchestrator/test_orchestrator.py::test_orchestrator_append_merges_phases"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/orchestrator/test_orchestrator \u2192 test_orchestrator_append_reuses_source_with_different_prefixes",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/orchestrator/test_orchestrator.py::test_orchestrator_append_reuses_source_with_different_prefixes"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/orchestrator/test_orchestrator \u2192 test_orchestrator_append_with_prefix_namespaces_phase_and_step_names",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/orchestrator/test_orchestrator.py::test_orchestrator_append_with_prefix_namespaces_phase_and_step_names"
       ],
       "justMyCode": false
     },

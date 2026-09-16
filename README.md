@@ -359,12 +359,18 @@ After installation (`pip install -e .`), you can:
     # or explicitly, with a base folder for the build:
     csorchestrator run my_project.py --target-folder /tmp/build
 
+    # print the orchestrator description (name/version, phases, steps, execution matrix)
+    # without executing anything:
+    python my_project.py describe
+    # or via the console script:
+    csorchestrator describe my_project.py
+
     # generate a GitHub Actions workflow YAML from the orchestrator
     python my_project.py generate-github-workflow -o .github/workflows/ci.yml
     # or via the console script:
     csorchestrator generate-github-workflow my_project.py -o .github/workflows/ci.yml
 
-    # reporting options (apply to run/generate-github-workflow):
+    # reporting options (apply to run/describe/generate-github-workflow):
     #   --sink {print,colored,colorama,none}   select the console reporter
     #   --markdown PATH                        also write an execution report as markdown
     ```

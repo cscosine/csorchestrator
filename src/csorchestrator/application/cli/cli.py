@@ -178,6 +178,37 @@ def generate_github_workflow_project_script(
     return 1
 
 
+def _build_reporter(config: CLIConfig) -> tuple[OrchestratorExecutorReporterComposite, ReporterSinkPrintBase | None]:
+    """Build the composite reporter for a CLI command; also returns the console sink for direct use."""
+    reporter = OrchestratorExecutorReporterComposite()
+    console_sink = _build_sink(config.sink)
+    if console_sink is not None:
+        reporter.reporters.append(OrchestratorExecutorReporterPrint(reporter_sink=console_sink))
+    if config.markdown_path is not None:
+        reporter.reporters.append(OrchestratorExecutorReporterMarkdown(path=config.markdown_path))
+    return reporter, console_sink
+
+
+def describe_project_script(
+    script_path: Path, console_sink: ReporterSinkPrintBase | None, reporter: OrchestratorExecutorReporterBase
+) -> int:
+    """Load a project script's create_orchestrator() function and report only its description."""
+
+    orchestrator_or_none = project_script_preparation(script_path, reporter)
+    if orchestrator_or_none is None:
+        return 1
+
+    orchestrator = orchestrator_or_none
+
+    if console_sink is not None:
+        console_sink.stdout(f"Orchestrator: {orchestrator.name_version_to_string()}")
+
+    reporter.report_execution_description(orchestrator.extract_minimal_description())
+    reporter.finalize_execution()
+
+    return 0
+
+
 @app.command("run")  # type: ignore[untyped-decorator]
 @click.argument(
     "script_path",
@@ -195,12 +226,7 @@ def run(ctx: click.Context, script_path: Path, target_folder: Path | None) -> in
     """Load a Python project script and execute its create_orchestrator() result."""
     config: CLIConfig = ctx.obj["config"]
 
-    reporter = OrchestratorExecutorReporterComposite()
-    console_sink = _build_sink(config.sink)
-    if console_sink is not None:
-        reporter.reporters.append(OrchestratorExecutorReporterPrint(reporter_sink=console_sink))
-    if config.markdown_path is not None:
-        reporter.reporters.append(OrchestratorExecutorReporterMarkdown(path=config.markdown_path))
+    reporter, _ = _build_reporter(config)
 
     return execute_project_script(script_path, target_folder, reporter)
 
@@ -222,18 +248,29 @@ def gen_wf(ctx: click.Context, script_path: Path, output: Path | None) -> int:
     """Load a Python project script and create the gitHub workflow for create_orchestrator() result."""
     config: CLIConfig = ctx.obj["config"]
 
-    reporter = OrchestratorExecutorReporterComposite()
-    console_sink = _build_sink(config.sink)
-    if console_sink is not None:
-        reporter.reporters.append(OrchestratorExecutorReporterPrint(reporter_sink=console_sink))
-    if config.markdown_path is not None:
-        reporter.reporters.append(OrchestratorExecutorReporterMarkdown(path=config.markdown_path))
+    reporter, _ = _build_reporter(config)
 
     return generate_github_workflow_project_script(script_path, output, reporter)
 
 
+@app.command("describe")  # type: ignore[untyped-decorator]
+@click.argument(
+    "script_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+)  # type: ignore[untyped-decorator]
+@click.pass_context  # type: ignore[untyped-decorator]
+def describe(ctx: click.Context, script_path: Path) -> int:
+    """Load a Python project script and emit only its orchestrator description (no execution)."""
+    config: CLIConfig = ctx.obj["config"]
+
+    reporter, console_sink = _build_reporter(config)
+
+    return describe_project_script(script_path, console_sink, reporter)
+
+
 COMMANDS_WITH_OPTIONAL_SCRIPT = {
     "run",
+    "describe",
     "generate-github-workflow",
 }
 

@@ -68,7 +68,7 @@ The package is organized in strict layers, enforced by `import-linter` contracts
 
 - [`application/cli/cli.py`](src/csorchestrator/application/cli/cli.py):
   click group with global `--sink {print,colored,colorama,none}` and `--markdown PATH`; commands
-  `run` and `generate-github-workflow`. `orchestrator_main_with_default_run()` makes a project script
+  `run`, `describe`, and `generate-github-workflow`. `orchestrator_main_with_default_run()` makes a project script
   behave like the CLI entry point (no args → `run`). Console script is `csorchestrator`.
 - [`application/recipes/create_orchestrator.py`](src/csorchestrator/application/recipes/create_orchestrator.py):
   `create_default_orchestrator()` (name, version, install dir, matrix, workflow trigger/release config)
