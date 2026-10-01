@@ -1,5 +1,7 @@
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
-from typing import Final
+from typing import Final, TypeAlias
 
 from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
 from csorchestrator.foundation.git.resolve_url import RepoUrlParts
@@ -30,11 +32,28 @@ class _All:
 ALL: Final = _All()
 
 
+class PublishPackageMode(Enum):
+    ON_VARIANT = "ON_VARIANT"
+    HEADERS_ONLY = "HEADERS_ONLY"
+
+
+@dataclass(frozen=True)
+class RepoRefBuildConfig:
+    repo_ref: str
+    build_config: BuildConfig | None
+    publish_mode: PublishPackageMode = PublishPackageMode.ON_VARIANT
+
+    # invariant: if build_config is None, publish_mode is ignored
+
+
+ReposConfig: TypeAlias = dict[str, RepoRefBuildConfig]
+
+
 def checkout_repos(
     orchestrator: Orchestrator,
     base_target_dir: Path,
     checkout_phase_name: str = "Repos Update",
-    repo_ref_build_type_list: dict[str, tuple[str, BuildConfig | None]] | None = None,
+    repo_ref_build_type_list: ReposConfig | None = None,
     checkout_self: bool = True,
     repo_access_token: str | None = None,
 ) -> None:
@@ -52,7 +71,7 @@ def checkout_repos(
             )
         )
 
-    for repo, (repo_ref, _) in repo_ref_build_type_list.items():
+    for repo, repo_config in repo_ref_build_type_list.items():
         s = (
             StepGetRepositoryGitHub(
                 name=f"{repo} Git clone/pull-ff",
@@ -63,7 +82,7 @@ def checkout_repos(
                     repo_org="cscosine",
                     repo_name=repo + ".git",
                 ),
-                repo_ref=repo_ref,
+                repo_ref=repo_config.repo_ref,
             )
             .add_extra(
                 StepGetRepositoryExtraDepthOne(
@@ -84,7 +103,7 @@ def build_repos(
     orchestrator: Orchestrator,
     base_target_dir: Path,
     build_phase_name: str = "Configure-Build-Test-Install",
-    repo_ref_build_type_list: dict[str, tuple[str, BuildConfig | None]] | None = None,
+    repo_ref_build_type_list: ReposConfig | None = None,
     build_self: BuildConfig | None = None,
 ) -> None:
     if repo_ref_build_type_list is None:
@@ -102,14 +121,14 @@ def build_repos(
             )
         )
 
-    for repo, (_, config) in repo_ref_build_type_list.items():
-        if config is not None:
+    for repo, repo_config in repo_ref_build_type_list.items():
+        if repo_config.build_config is not None:
             p.add_step(
                 StepCMakeWorkflow(
                     name=f"{repo} CMake Workflow",
-                    description=f"CMake workflow for {repo} with config: {config}",
+                    description=f"CMake workflow for {repo} with config: {repo_config.build_config}",
                     source_dir=(base_target_dir / repo).as_posix(),
-                    config=config,
+                    config=repo_config.build_config,
                 )
             )
 
@@ -118,7 +137,7 @@ def create_and_upload_artifacts(
     orchestrator: Orchestrator,
     base_install_dir: Path,
     create_artifact_phase_name: str = "Create and Upload Artifacts",
-    repo_ref_build_type_list: dict[str, tuple[str, BuildConfig | None]] | None = None,
+    repo_ref_build_type_list: ReposConfig | None = None,
     repos_auto_search_list: list[str] | _All | None = ALL,
     repos_config_file_list: list[CMakeConfigPackageVersionGrep] | None = None,
     repos_version_list: list[PackageVersion] | None = None,
@@ -131,7 +150,7 @@ def create_and_upload_artifacts(
     repos_auto_search_list_value: list[str] = []
     if isinstance(repos_auto_search_list, _All):
         repos_auto_search_list_value = [
-            repo for repo, (_, config) in repo_ref_build_type_list.items() if config is not None
+            repo for repo, repo_config in repo_ref_build_type_list.items() if repo_config.build_config is not None
         ]
     elif repos_auto_search_list is not None:
         repos_auto_search_list_value = repos_auto_search_list
@@ -181,7 +200,7 @@ def checkout_build_and_archive_repos(
     checkout_phase_name: str = "Repos Update",
     build_phase_name: str = "Configure-Build-Test-Install",
     create_artifact_phase_name: str = "Create and Upload Artifacts",
-    repo_ref_build_type_list: dict[str, tuple[str, BuildConfig | None]] | None = None,
+    repo_ref_build_type_list: ReposConfig | None = None,
     checkout_self: bool = True,
     build_self: BuildConfig | None = None,
     repo_access_token: str | None = None,
