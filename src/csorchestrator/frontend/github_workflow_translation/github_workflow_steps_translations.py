@@ -184,13 +184,20 @@ class StepGitHubUploadArtifacts(GithubStepInterface):
     with_name: str
     with_path: list[str]
     uses: str = "actions/upload-artifact@v7"
+    # overwrite an existing artifact with the same name in the same workflow run.
+    overwrite: bool = True
 
     def to_dict(self) -> dict[str, Any]:
+        with_dict: dict[str, Any] = {
+            "name": self.with_name,
+            "path": LiteralString("\n".join(self.with_path)),
+        }
+
+        if self.overwrite:
+            with_dict["overwrite"] = True
+
         return {
             "name": self.name,
             "uses": self.uses,
-            "with": {
-                "name": self.with_name,
-                "path": LiteralString("\n".join(self.with_path)),
-            },
+            "with": with_dict,
         }
