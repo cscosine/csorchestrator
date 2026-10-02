@@ -8,7 +8,7 @@ from csorchestrator.portable.release_manifest import (
 )
 
 input_manifest_path_variant = cast(list[tuple[Path, str]], "__INPUT_MANIFEST_PATH_VARIANT__")
-output_filepath = cast(Path, "__OUTPUT_FILE_PATH__")
+output_manifest_filename = cast(Path, "__OUTPUT_FILE_PATH__")
 project_name = "__PROJECT_NAME__"
 project_version = "__PROJECT_VERSION__"
 base_path_additional_files = cast(Path, "_")
@@ -18,7 +18,7 @@ output_bundle_file_name = cast(Path, "_")
 
 errors_list = collect_release_manifest_single_variant_and_prepare_manifest(
     input_manifest_path_variant=input_manifest_path_variant,
-    output_filepath=output_filepath,
+    output_manifest_filename=output_manifest_filename,
     project_name=project_name,
     project_version=project_version,
     base_path_additional_files=base_path_additional_files,

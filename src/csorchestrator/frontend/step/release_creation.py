@@ -13,16 +13,24 @@ from csorchestrator.foundation.core.report import Report
 from csorchestrator.frontend.github_workflow_translation.github_workflow_job_create_release import (
     ReleaseCreationOnTagConfigBaseCapabilityGithubWorkflow,
 )
-from csorchestrator.frontend.github_workflow_translation.github_workflow_steps_translations import StepRunCommand
-from csorchestrator.frontend.github_workflow_translation.release_creation_context import ReleaseCreationContext
-from csorchestrator.frontend.local_execution.context_local_execution import ContextLocalExecution
+from csorchestrator.frontend.github_workflow_translation.github_workflow_steps_translations import (
+    StepRunCommand,
+)
+from csorchestrator.frontend.github_workflow_translation.release_creation_context import (
+    ReleaseCreationContext,
+)
+from csorchestrator.frontend.local_execution.context_local_execution import (
+    ContextLocalExecution,
+)
 from csorchestrator.frontend.local_execution.orchestrator_visitor_local_executor import (
     ReleaseCreationOnTagConfigBaseCapabilityLocalExecution,
 )
 from csorchestrator.frontend.local_execution.release_creation_context_local_execution import (
     ReleaseCreationContextLocalExecution,
 )
-from csorchestrator.frontend.local_execution.validate_and_execute import create_context_os_architecture_string
+from csorchestrator.frontend.local_execution.validate_and_execute import (
+    create_context_os_architecture_string,
+)
 from csorchestrator.frontend.step.step_get_versions_from_cmake_config_package_version import (
     create_version_file_name,
 )
@@ -41,16 +49,31 @@ from csorchestrator.portable.release_manifest import (
 class ReleaseCreationOnTagConfigCapabilityGithubWorkflow(ReleaseCreationOnTagConfigBaseCapabilityGithubWorkflow):
     step: "ReleaseCreationOnTagConfig"
 
-    def to_steps_dict(self, release_creation_context: ReleaseCreationContext) -> list[dict[str, Any]]:
-        return release_creation_on_tag_config_to_githubwf(self.step, release_creation_context)
-
     def get_artifacts_dir(self) -> str:
         return self.step.artifacts_dir
 
-    def get_output_bundle_filename(self) -> Path | None:
-        if len(self.step.additional_files_list) > 0:
-            return self.step.output_bundle_file_name
-        return None
+    def get_output_bundle_filename(self) -> Path:
+        return self.step.output_bundle_file_name
+
+    def has_additional_files_for_bundle(self) -> bool:
+        return self.step.has_additional_files_for_bundle()
+
+    def get_output_folder_for_generated_files(self) -> Path:
+        return self.step.output_folder_for_generated_files
+
+    def get_output_manifest_filename(self, project_name_and_version_string: str) -> Path:
+        return self.step.get_output_manifest_filename(project_name_and_version_string)
+
+    def to_steps_dict(self, release_creation_context: ReleaseCreationContext) -> list[dict[str, Any]]:
+
+        return release_creation_on_tag_config_to_githubwf(
+            step=self.step,
+            subfolder_generated_path=self.step.output_folder_for_generated_files,
+            output_manifest_filename=self.step.get_output_manifest_filename(
+                release_creation_context.orchestrator_description.name_and_version_string
+            ),
+            release_creation_context=release_creation_context,
+        )
 
 
 @dataclass
@@ -58,7 +81,10 @@ class ReleaseCreationOnTagConfiCapabilityLocalExecution(ReleaseCreationOnTagConf
     step: "ReleaseCreationOnTagConfig"
 
     def execute_locally(self, context: ReleaseCreationContextLocalExecution) -> Report:
-        return release_creation_on_tag_config_execute_local(self.step, context)
+        return release_creation_on_tag_config_execute_local(
+            step=self.step,
+            relase_context=context,
+        )
 
 
 @dataclass
@@ -67,6 +93,13 @@ class ReleaseCreationOnTagConfig(ReleaseCreationOnTagConfigBase):
     artifacts_dir: str  # used only in github execution, specfify folders where artifacts are downloaded
     additional_files_list: list[Path]  # list of additional files
     output_bundle_file_name: Path
+    output_folder_for_generated_files: Path = Path("generated-for-release")
+
+    def get_output_manifest_filename(self, project_name_and_version_string: str) -> Path:
+        return Path(f"{project_name_and_version_string}{ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION}")
+
+    def has_additional_files_for_bundle(self) -> bool:
+        return len(self.additional_files_list) > 0
 
     def __post_init__(self) -> None:
         self.add_capability(
@@ -80,7 +113,10 @@ class ReleaseCreationOnTagConfig(ReleaseCreationOnTagConfigBase):
 
 
 def release_creation_on_tag_config_to_githubwf(
-    step: ReleaseCreationOnTagConfig, release_creation_context: ReleaseCreationContext
+    step: ReleaseCreationOnTagConfig,
+    subfolder_generated_path: Path,
+    output_manifest_filename: Path,
+    release_creation_context: ReleaseCreationContext,
 ) -> list[dict[str, Any]]:
 
     input_manifest_path_variant: list[tuple[Path, str]] = []
@@ -104,39 +140,51 @@ def release_creation_on_tag_config_to_githubwf(
 
         input_manifest_path_variant.append((input_path, context_os_architecture_compiler_generator_string))
 
-    output_filepath = Path(
-        f"{release_creation_context.orchestrator_description.name_and_version_string}{ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION}"
-    )
-
     template_file = files("csorchestrator.frontend.step").joinpath("templates").joinpath("create_release_manifest.py")
     python_code = template_file.read_text(encoding="utf-8")
 
     python_code = relocate_portable_imports(python_code)
 
     python_code = replace_template_variable(
-        python_code, "input_manifest_path_variant", fix_path_repr(repr(input_manifest_path_variant))
-    )
-    python_code = replace_template_variable(python_code, "output_filepath", fix_path_repr(repr(output_filepath)))
-    python_code = replace_template_variable(
-        python_code, "project_name", repr(release_creation_context.orchestrator_description.orchestrator_name)
+        python_code,
+        "input_manifest_path_variant",
+        fix_path_repr(repr(input_manifest_path_variant)),
     )
     python_code = replace_template_variable(
-        python_code, "project_version", repr(release_creation_context.orchestrator_description.orchestrator_version)
+        python_code,
+        "output_manifest_filename",
+        fix_path_repr(repr(output_manifest_filename)),
+    )
+    python_code = replace_template_variable(
+        python_code,
+        "project_name",
+        repr(release_creation_context.orchestrator_description.orchestrator_name),
+    )
+    python_code = replace_template_variable(
+        python_code,
+        "project_version",
+        repr(release_creation_context.orchestrator_description.orchestrator_version),
     )
 
     python_code = replace_template_variable(
-        python_code, "base_path_additional_files", 'Path(os.environ["GITHUB_WORKSPACE"])'
+        python_code,
+        "base_path_additional_files",
+        'Path(os.environ["GITHUB_WORKSPACE"])',
     )
     python_code = replace_template_variable(
-        python_code, "list_additional_files", fix_path_repr(repr(step.additional_files_list))
+        python_code,
+        "list_additional_files",
+        fix_path_repr(repr(step.additional_files_list)),
     )
     python_code = replace_template_variable(
         python_code,
         "output_folder_additional_files",
-        fix_path_repr(repr(Path("./"))),  # this is executed in artifacts folder
+        fix_path_repr(repr(subfolder_generated_path)),  # this is executed in artifacts folder
     )
     python_code = replace_template_variable(
-        python_code, "output_bundle_file_name", fix_path_repr(repr(step.output_bundle_file_name))
+        python_code,
+        "output_bundle_file_name",
+        fix_path_repr(repr(step.output_bundle_file_name)),
     )
 
     python_lines = python_code.splitlines()
@@ -155,7 +203,8 @@ def release_creation_on_tag_config_to_githubwf(
 
 
 def release_creation_on_tag_config_execute_local(
-    step: ReleaseCreationOnTagConfig, relase_context: ReleaseCreationContextLocalExecution
+    step: ReleaseCreationOnTagConfig,
+    relase_context: ReleaseCreationContextLocalExecution,
 ) -> Report:
     report = Report()
 
@@ -204,21 +253,19 @@ def release_creation_on_tag_config_execute_local(
         ).resolve()
         input_manifest_path_variant.append((input_full_path, context_os_architecture_compiler_generator_string))
 
-    output_filepath = step.base_install_dir / Path(
-        relase_context.orchestrator_description.name_and_version_string
-        + ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION
-    )
-
-    base_path_additional_files = relase_context.script_folder_path
-
     # TODO check they are relative and not leaving the folder
     list_additional_files = step.additional_files_list
 
-    output_folder_additional_files = step.base_install_dir
+    output_folder_additional_files = step.base_install_dir / step.output_folder_for_generated_files
+
+    output_manifest_filename = step.get_output_manifest_filename(
+        relase_context.orchestrator_description.name_and_version_string
+    )
+    base_path_additional_files = relase_context.script_folder_path
 
     errors = collect_release_manifest_single_variant_and_prepare_manifest(
         input_manifest_path_variant=input_manifest_path_variant,
-        output_filepath=output_filepath,
+        output_manifest_filename=output_manifest_filename,
         project_name=relase_context.orchestrator_description.orchestrator_name,
         project_version=relase_context.orchestrator_description.orchestrator_version,
         base_path_additional_files=base_path_additional_files,
@@ -230,6 +277,6 @@ def release_creation_on_tag_config_execute_local(
         for e in errors:
             report.append_error(e)
     else:
-        report.append_info(f"release manifest written to {str(output_filepath)}")
+        report.append_info(f"release manifest written to {str(output_manifest_filename)}")
 
     return report

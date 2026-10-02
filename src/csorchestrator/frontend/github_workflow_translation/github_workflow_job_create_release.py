@@ -15,7 +15,6 @@ from csorchestrator.frontend.github_workflow_translation.github_workflow_steps_t
     StepGitHubUploadArtifacts,
 )
 from csorchestrator.frontend.github_workflow_translation.release_creation_context import ReleaseCreationContext
-from csorchestrator.portable.release_manifest import ReleaseManifest
 
 
 class ReleaseCreationOnTagConfigBaseCapabilityGithubWorkflow(ReleaseCreationOnTagConfigBaseCapability):
@@ -27,8 +26,17 @@ class ReleaseCreationOnTagConfigBaseCapabilityGithubWorkflow(ReleaseCreationOnTa
     def get_artifacts_dir(self) -> str:
         return ""
 
-    def get_output_bundle_filename(self) -> Path | None:
-        return None
+    def get_output_bundle_filename(self) -> Path:
+        return Path()
+
+    def has_additional_files_for_bundle(self) -> bool:
+        return False
+
+    def get_output_folder_for_generated_files(self) -> Path:
+        return Path()
+
+    def get_output_manifest_filename(self, project_name_and_version_string: str) -> Path:
+        return Path()
 
 
 @dataclass
@@ -48,6 +56,19 @@ class JobReleaseCreationFromArtifacts:
             return {}  # this should be an error to be reported
 
         artifacts_dir = capability.get_artifacts_dir()
+        output_bundle_file = capability.get_output_bundle_filename()
+        has_additional_files_for_bundle = capability.has_additional_files_for_bundle()
+        output_folder_for_generated_files = capability.get_output_folder_for_generated_files()
+        output_manifest_filename = capability.get_output_manifest_filename(
+            self.release_creation_context.orchestrator_description.name_and_version_string
+        )
+
+        output_manifest_path = Path(artifacts_dir) / output_folder_for_generated_files / output_manifest_filename
+        output_bundle_path = Path(artifacts_dir) / output_folder_for_generated_files / output_bundle_file
+
+        additional_files_for_release_list: list[Path] = [output_manifest_path]
+        if has_additional_files_for_bundle:
+            additional_files_for_release_list.append(output_bundle_path)
 
         if self.self_checkout_repo:
             steps += [
@@ -64,37 +85,30 @@ class JobReleaseCreationFromArtifacts:
             ShowDownloadedFiles(artifacts_dir).to_dict(),
         ]
 
-        output_bundle_file = None
+        steps.extend(capability.to_steps_dict(self.release_creation_context))
 
-        capability = self.config.get_capability(ReleaseCreationOnTagConfigBaseCapabilityGithubWorkflow)
-        extra_extension_for_release_files = None
-        if capability is not None:
-            steps.extend(capability.to_steps_dict(self.release_creation_context))
-            extra_extension_for_release_files = ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION
+        steps.append(
+            StepGitHubUploadArtifacts(
+                name="Upload manifest as artifacts",
+                with_name=output_manifest_filename.as_posix(),
+                with_path=[f"{output_manifest_path.as_posix()}"],
+            ).to_dict()
+        )
+
+        if has_additional_files_for_bundle:
             steps.append(
                 StepGitHubUploadArtifacts(
-                    name="Upload manifest as artifacts",
-                    with_name="manifest" + extra_extension_for_release_files,
-                    with_path=[f"{artifacts_dir}/**/*{extra_extension_for_release_files}"],
+                    name=f"Upload additional file {str(output_bundle_file)} as artifact",
+                    with_name=output_bundle_file.as_posix(),
+                    with_path=[f"{output_bundle_path.as_posix()}"],
                 ).to_dict()
             )
-
-            output_bundle_file = capability.get_output_bundle_filename()
-            if output_bundle_file is not None:
-                steps.append(
-                    StepGitHubUploadArtifacts(
-                        name=f"Upload additional file {str(output_bundle_file)} as artifact",
-                        with_name=output_bundle_file.as_posix(),
-                        with_path=[f"{artifacts_dir}/{output_bundle_file.as_posix()}"],
-                    ).to_dict()
-                )
 
         steps.append(
             CreateGitHubRelease(
                 artifacts_folder=artifacts_dir,
                 if_str=self.if_str,
-                extra_extension_for_release_files=extra_extension_for_release_files,
-                additional_files_list=[output_bundle_file] if output_bundle_file is not None else [],
+                additional_files_list=additional_files_for_release_list,
             ).to_dict()
         )
 

@@ -235,7 +235,7 @@ def create_archive_additional_files(source_folder: Path, source_list: list[Path]
 
 def collect_release_manifest_single_variant_and_prepare_manifest(
     input_manifest_path_variant: list[tuple[Path, str]],
-    output_filepath: Path,
+    output_manifest_filename: Path,
     project_name: str,
     project_version: str,
     base_path_additional_files: Path,
@@ -257,6 +257,9 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
             ManifestVersionsEntry(variant=context_os_architecture_compiler_generator_string, entries=packages)
         )
 
+    # Create output directories if needed
+    output_folder_additional_files.mkdir(parents=True, exist_ok=True)
+
     release_manifest = ReleaseManifest(
         project_name=project_name,
         project_version=project_version,
@@ -265,7 +268,7 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
         output_bundle_file_name=output_bundle_file_name.as_posix(),
     )
     release_manifest.write_release_manifest(
-        output_filepath,
+        output_folder_additional_files / output_manifest_filename,
     )
 
     if len(list_additional_files) > 0:
