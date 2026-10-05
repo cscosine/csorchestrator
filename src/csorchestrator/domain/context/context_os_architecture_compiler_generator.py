@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from csorchestrator.domain.context.context_compiler_generator import ContextCompilerGenerator
-from csorchestrator.domain.context.context_os_architecture import ContextOsArchitecture
+from csorchestrator.domain.context.context_os_architecture import OS, ContextOsArchitecture
 from csorchestrator.domain.orchestrator.orchestrator import MatrixExecutionBase
 
 CSORCHESTRATOR_SCHEMA_VERSION = "csv1"
@@ -65,3 +65,10 @@ def create_context_os_architecture_compiler_generator_string(
         context_compiler_generator.compiler_version.lower(),
         context_compiler_generator.build_generator.generator.value.lower(),
     )
+
+
+def create_header_only_variant_string(os: OS) -> str:
+    parts: list[str] = []
+    parts.append(CSORCHESTRATOR_SCHEMA_VERSION.lower())
+    parts.append(os.value.lower())
+    return "-".join(parts)

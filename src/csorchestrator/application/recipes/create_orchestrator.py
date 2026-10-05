@@ -4,7 +4,6 @@ from csorchestrator.application.factory.factory import create_orchestrator_facto
 from csorchestrator.application.recipes.checkout_build import ALL, _All, checkout_build_and_archive_repos
 from csorchestrator.application.recipes.repos_config import (
     RepoRefBuildPublishConfigDict,
-    ReposPublishConfigDict,
     extract_repo_publish_config_dict,
 )
 from csorchestrator.domain.context.context_os_architecture_compiler_generator import (
@@ -16,6 +15,7 @@ from csorchestrator.domain.orchestrator.workflow_config import Cron, DayOfWeek, 
 from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
 from csorchestrator.frontend.step.release_creation import ReleaseCreationOnTagConfig
 from csorchestrator.portable.package_version import CMakeConfigPackageVersionGrep, PackageVersion
+from csorchestrator.portable.release_manifest import ReposPublishConfigDict
 
 
 def create_default_execution_matrix(
@@ -146,6 +146,7 @@ def create_default_orchestrator(
             artifacts_dir=artifacts_dir,
             additional_files_list=additional_files_list,
             output_bundle_file_name=output_bundle_file_name,
+            repo_publish_config_dict=repo_publish_config_dict,
         ),
     )
 

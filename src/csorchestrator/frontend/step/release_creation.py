@@ -5,6 +5,7 @@ from typing import Any
 
 from csorchestrator.domain.context.context_os_architecture_compiler_generator import (
     create_context_os_architecture_compiler_generator_string,
+    create_header_only_variant_string,
 )
 from csorchestrator.domain.orchestrator.workflow_config import (
     ReleaseCreationOnTagConfigBase,
@@ -41,6 +42,7 @@ from csorchestrator.frontend.step.templates.utils import (
 )
 from csorchestrator.portable.release_manifest import (
     ReleaseManifest,
+    ReposPublishConfigDict,
     collect_release_manifest_single_variant_and_prepare_manifest,
 )
 
@@ -93,6 +95,7 @@ class ReleaseCreationOnTagConfig(ReleaseCreationOnTagConfigBase):
     artifacts_dir: str  # used only in github execution, specfify folders where artifacts are downloaded
     additional_files_list: list[Path]  # list of additional files
     output_bundle_file_name: Path
+    repo_publish_config_dict: ReposPublishConfigDict | None = None
     output_folder_for_generated_files: Path = Path("generated-for-release")
 
     def get_output_manifest_filename(self, project_name_and_version_string: str) -> Path:
@@ -120,6 +123,7 @@ def release_creation_on_tag_config_to_githubwf(
 ) -> list[dict[str, Any]]:
 
     input_manifest_path_variant: list[tuple[Path, str]] = []
+    header_only_variants_sources: dict[str, str] = {}
     for context in release_creation_context.matrix_list:
         context_os_architecture_compiler_generator_string = create_context_os_architecture_compiler_generator_string(
             context
@@ -140,10 +144,20 @@ def release_creation_on_tag_config_to_githubwf(
 
         input_manifest_path_variant.append((input_path, context_os_architecture_compiler_generator_string))
 
+        header_only_variant = create_header_only_variant_string(context.context_os_architecture.os)
+        if header_only_variant not in header_only_variants_sources:
+            header_only_variants_sources[header_only_variant] = context_os_architecture_compiler_generator_string
+
     template_file = files("csorchestrator.frontend.step").joinpath("templates").joinpath("create_release_manifest.py")
     python_code = template_file.read_text(encoding="utf-8")
 
     python_code = relocate_portable_imports(python_code)
+
+    python_code = replace_template_variable(
+        python_code,
+        "input_folder_base",
+        fix_path_repr(repr(Path("./"))),
+    )
 
     python_code = replace_template_variable(
         python_code,
@@ -187,6 +201,18 @@ def release_creation_on_tag_config_to_githubwf(
         fix_path_repr(repr(step.output_bundle_file_name)),
     )
 
+    python_code = replace_template_variable(
+        python_code,
+        "repo_publish_config_dict",
+        repr(step.repo_publish_config_dict),
+    )
+
+    python_code = replace_template_variable(
+        python_code,
+        "header_only_variants_sources",
+        repr(header_only_variants_sources),
+    )
+
     python_lines = python_code.splitlines()
 
     step_github = StepRunCommand(
@@ -210,6 +236,11 @@ def release_creation_on_tag_config_execute_local(
 
     # collect all input manifest for each variant
     input_manifest_path_variant: list[tuple[Path, str]] = []
+    # maps a variant to a header only variant, get the first compatible
+    header_only_variants_sources: dict[str, str] = {}
+
+    input_base_dir = Path(relase_context.base_path / step.base_install_dir).resolve()
+
     for counter, os_architecture_compiler_generator in enumerate(
         relase_context.os_architecture_compiler_generator_list
     ):
@@ -241,7 +272,6 @@ def release_creation_on_tag_config_execute_local(
             context.get_active_os_architecture_compiler_generator()
         )
 
-        input_base_dir = Path(context.base_folder_path / step.base_install_dir).resolve()
         input_full_path = Path(
             input_base_dir
             / Path(
@@ -253,6 +283,10 @@ def release_creation_on_tag_config_execute_local(
         ).resolve()
         input_manifest_path_variant.append((input_full_path, context_os_architecture_compiler_generator_string))
 
+        header_only_variant = create_header_only_variant_string(context.os_architecture.os)
+        if header_only_variant not in header_only_variants_sources:
+            header_only_variants_sources[header_only_variant] = context_os_architecture_compiler_generator_string
+
     # TODO check they are relative and not leaving the folder
     list_additional_files = step.additional_files_list
 
@@ -263,7 +297,14 @@ def release_creation_on_tag_config_execute_local(
     )
     base_path_additional_files = relase_context.script_folder_path
 
+    # manage header only re-target variants
+    if step.repo_publish_config_dict is None:
+        repo_publish_config_dict: ReposPublishConfigDict = {}
+    else:
+        repo_publish_config_dict = step.repo_publish_config_dict
+
     errors = collect_release_manifest_single_variant_and_prepare_manifest(
+        input_folder_base=input_base_dir,
         input_manifest_path_variant=input_manifest_path_variant,
         output_manifest_filename=output_manifest_filename,
         project_name=relase_context.orchestrator_description.orchestrator_name,
@@ -272,6 +313,9 @@ def release_creation_on_tag_config_execute_local(
         list_additional_files=list_additional_files,
         output_folder_additional_files=output_folder_additional_files,
         output_bundle_file_name=step.output_bundle_file_name,
+        repo_publish_config_dict=repo_publish_config_dict,
+        header_only_variants_sources=header_only_variants_sources,
+        archive_files_are_in_context_based_folder=False,
     )
     if len(errors) > 0:
         for e in errors:

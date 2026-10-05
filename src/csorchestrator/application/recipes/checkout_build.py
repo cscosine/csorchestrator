@@ -26,7 +26,6 @@ from csorchestrator.frontend.step.step_get_versions_from_cmake_config_package_ve
 )
 from csorchestrator.frontend.step.step_upload_artifacts import (
     StepUploadArtifacts,
-    create_artifact_prefix_from_orchestrator_name_version,
 )
 from csorchestrator.portable.package_version import CMakeConfigPackageVersionGrep, PackageVersion
 
@@ -175,7 +174,6 @@ def create_and_upload_artifacts(
             name="Upload Artifacts",
             description="Upload Artifacts with libs and versions",
             base_install_dir=base_install_dir,
-            artifact_prefix=create_artifact_prefix_from_orchestrator_name_version(orchestrator),
         )
     )
 

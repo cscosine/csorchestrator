@@ -1,13 +1,8 @@
 from dataclasses import dataclass
-from enum import Enum
 from typing import TypeAlias
 
 from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
-
-
-class PublishPackageMode(Enum):
-    ON_VARIANT = "ON_VARIANT"
-    HEADERS_ONLY = "HEADERS_ONLY"
+from csorchestrator.portable.release_manifest import PublishPackageMode, ReposPublishConfigDict
 
 
 @dataclass(frozen=True)
@@ -39,9 +34,6 @@ def extract_repo_ref_dict(repos: RepoRefBuildPublishConfigDict) -> ReposRefDict:
     for repo, config in repos.items():
         ret[repo] = config.repo_ref
     return ret
-
-
-ReposPublishConfigDict: TypeAlias = dict[str, PublishPackageMode]
 
 
 def extract_repo_publish_config_dict(repos: RepoRefBuildPublishConfigDict) -> ReposPublishConfigDict:

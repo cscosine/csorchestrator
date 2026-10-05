@@ -2,14 +2,33 @@ import json
 import shutil
 import tarfile
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
-from typing import Any, ClassVar
+
+# WAR: do not use assert_never from typing because this can be used in 3.10 too (e.g. on ubuntu 22.04)
+from typing import Any, ClassVar, NoReturn, TypeAlias
 
 from .package_version import (
     CMakeConfigPackageVersionGrep,
     PackageVersion,
     get_package_versions_helper,
 )
+
+
+def assert_never(value: NoReturn) -> NoReturn:
+    raise AssertionError(f"Unhandled value: {value!r}")
+
+
+class PublishPackageMode(Enum):
+    ON_VARIANT = "ON_VARIANT"
+    HEADERS_ONLY = "HEADERS_ONLY"
+
+    # required to represent this in package generation
+    def __repr__(self) -> str:
+        return f"{type(self).__qualname__}.{self.name}"
+
+
+ReposPublishConfigDict: TypeAlias = dict[str, PublishPackageMode]
 
 
 @dataclass
@@ -29,6 +48,10 @@ class ManifestVersionsEntry:
             variant=data["variant"],
             entries=[PackageVersion.from_dict(entry) for entry in data["entries"]],
         )
+
+    @classmethod
+    def compose_name_version_to_string(cls, name: str, version: str) -> str:
+        return f"{name}-{version}"
 
 
 @dataclass
@@ -142,6 +165,10 @@ def load_release_manifest_single_variant(
     return packages.variants[0].entries
 
 
+def create_artifact_name(project_name_and_version: str, context_os_architecture_compiler_generator_string: str) -> str:
+    return f"{project_name_and_version}-{context_os_architecture_compiler_generator_string}"
+
+
 def create_archive_filename(
     project_name_and_version: str,
     context_os_architecture_compiler_generator_string: str,
@@ -234,6 +261,7 @@ def create_archive_additional_files(source_folder: Path, source_list: list[Path]
 
 
 def collect_release_manifest_single_variant_and_prepare_manifest(
+    input_folder_base: Path,
     input_manifest_path_variant: list[tuple[Path, str]],
     output_manifest_filename: Path,
     project_name: str,
@@ -242,7 +270,16 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
     list_additional_files: list[Path],
     output_folder_additional_files: Path,
     output_bundle_file_name: Path,
+    repo_publish_config_dict: ReposPublishConfigDict,
+    header_only_variants_sources: dict[
+        str, str
+    ],  # csv1-windows --> csv1-windows-11- .... csv1-linux --> csv1-linux-ubuntu ....
+    archive_files_are_in_context_based_folder: bool,
 ) -> list[str]:  # return errors
+
+    # collect single variants manifest and cumulate
+    # and collect all packages names as single set
+    packages_names_set: set[str] = set()
     collected_version_entries: list[ManifestVersionsEntry] = []
     for input_full_path, context_os_architecture_compiler_generator_string in input_manifest_path_variant:
         packages_or_error = load_release_manifest_single_variant(
@@ -253,9 +290,126 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
             return [packages_or_error]
         packages = packages_or_error
 
+        packages_names_set |= {package.name for package in packages}
+
         collected_version_entries.append(
             ManifestVersionsEntry(variant=context_os_architecture_compiler_generator_string, entries=packages)
         )
+
+    # add defaults AS_VARIANT to repo_publish_config_dict
+    repo_publish_config_dict.update(
+        (name, PublishPackageMode.ON_VARIANT) for name in packages_names_set if name not in repo_publish_config_dict
+    )
+
+    project_name_and_version = ManifestVersionsEntry.compose_name_version_to_string(project_name, project_version)
+
+    final_collected_version_entries: list[ManifestVersionsEntry] = []
+    # collect non-headers only entries only and files to remove
+    files_to_remove: list[str] = []
+    for collected_version_entry in collected_version_entries:
+        variant_entries: list[PackageVersion] = []
+        for package in collected_version_entry.entries:
+            publish_mode = repo_publish_config_dict[package.name]
+            if package.name in repo_publish_config_dict:
+                match publish_mode:
+                    case PublishPackageMode.ON_VARIANT:
+                        variant_entries.append(package)
+                    case PublishPackageMode.HEADERS_ONLY:
+                        package_file_name = create_archive_filename(
+                            project_name_and_version=project_name_and_version,
+                            context_os_architecture_compiler_generator_string=collected_version_entry.variant,
+                            lib_name=package.name,
+                            lib_version=package.version,
+                        )
+
+                        if archive_files_are_in_context_based_folder:
+                            package_file_name = (
+                                create_artifact_name(
+                                    project_name_and_version=project_name_and_version,
+                                    context_os_architecture_compiler_generator_string=collected_version_entry.variant,
+                                )
+                                + "/"
+                                + package_file_name
+                            )
+
+                        files_to_remove.append(package_file_name)
+
+                    case _:
+                        assert_never(publish_mode)
+
+        final_collected_version_entries.append(
+            ManifestVersionsEntry(variant=collected_version_entry.variant, entries=variant_entries)
+        )
+
+    # collect headers only to representative headers only versions
+    files_to_move: list[tuple[str, str]] = []
+    subfolders_to_create: set[str] = set()
+    for header_only_variant, header_only_variant_src in header_only_variants_sources.items():
+        entries: list[PackageVersion] = []
+        version_entry: ManifestVersionsEntry | None = None
+        for variant in collected_version_entries:
+            if variant.variant == header_only_variant_src:
+                version_entry = variant
+        if version_entry is None:
+            continue
+
+        for package in version_entry.entries:
+            publish_mode = repo_publish_config_dict[package.name]
+            if package.name in repo_publish_config_dict:
+                match publish_mode:
+                    case PublishPackageMode.ON_VARIANT:
+                        pass
+                    case PublishPackageMode.HEADERS_ONLY:
+                        entries.append(package)
+                        src = create_archive_filename(
+                            project_name_and_version=project_name_and_version,
+                            context_os_architecture_compiler_generator_string=header_only_variant_src,
+                            lib_name=package.name,
+                            lib_version=package.version,
+                        )
+
+                        dst = create_archive_filename(
+                            project_name_and_version=project_name_and_version,
+                            context_os_architecture_compiler_generator_string=header_only_variant,
+                            lib_name=package.name,
+                            lib_version=package.version,
+                        )
+
+                        if archive_files_are_in_context_based_folder:
+                            dst_subdir = create_artifact_name(
+                                project_name_and_version=project_name_and_version,
+                                context_os_architecture_compiler_generator_string=header_only_variant,
+                            )
+                            subfolders_to_create.add(dst_subdir)
+
+                            src = (
+                                create_artifact_name(
+                                    project_name_and_version=project_name_and_version,
+                                    context_os_architecture_compiler_generator_string=header_only_variant_src,
+                                )
+                                + "/"
+                                + src
+                            )
+                            dst = dst_subdir + "/" + dst
+                        files_to_move.append((src, dst))
+                    case _:
+                        assert_never(publish_mode)
+
+        final_collected_version_entries.append(ManifestVersionsEntry(variant=header_only_variant, entries=entries))
+
+    # TODO
+
+    # create headers only folders
+    for sf in subfolders_to_create:
+        Path(input_folder_base / Path(sf)).mkdir(exist_ok=True)
+
+    # rename headers only files to headers only variant
+    for fsrc, fdst in files_to_move:
+        Path(input_folder_base / fsrc).rename(input_folder_base / fdst)
+
+    # remove per build variants to not upload as release
+    for f in files_to_remove:
+        Path(input_folder_base / f).unlink(missing_ok=True)
 
     # Create output directories if needed
     output_folder_additional_files.mkdir(parents=True, exist_ok=True)
@@ -263,7 +417,7 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
     release_manifest = ReleaseManifest(
         project_name=project_name,
         project_version=project_version,
-        variants=collected_version_entries,
+        variants=final_collected_version_entries,
         additional_files=[file.as_posix() for file in list_additional_files],
         output_bundle_file_name=output_bundle_file_name.as_posix(),
     )

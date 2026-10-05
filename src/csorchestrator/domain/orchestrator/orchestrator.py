@@ -8,6 +8,7 @@ from csorchestrator.domain.orchestrator.orchestrator_minimal_description import 
 )
 from csorchestrator.domain.orchestrator.phase import Phase
 from csorchestrator.domain.orchestrator.workflow_config import WorkflowConfig
+from csorchestrator.portable.release_manifest import ManifestVersionsEntry
 
 
 # TODO support capabilities here to be more generic?
@@ -51,7 +52,7 @@ class Orchestrator:
 
     @classmethod
     def compose_name_version_to_string(cls, name: str, version: str) -> str:
-        return f"{name}-{version}"
+        return ManifestVersionsEntry.compose_name_version_to_string(name=name, version=version)
 
     def name_version_to_string(self) -> str:
         return Orchestrator.compose_name_version_to_string(self.name, self.version)

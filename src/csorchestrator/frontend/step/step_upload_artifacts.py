@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
 from csorchestrator.domain.orchestrator.reporter_sink_base import ReporterSinkBase
 from csorchestrator.domain.orchestrator.step_base import (
     StepBase,
@@ -21,7 +20,7 @@ from csorchestrator.frontend.github_workflow_translation.orchestrator_visitor_gi
     OptionalListGithubStepsWithReport,
     StepCapabilityGithubWorkflow,
 )
-from csorchestrator.portable.release_manifest import ReleaseManifest
+from csorchestrator.portable.release_manifest import ReleaseManifest, create_artifact_name
 
 
 @dataclass
@@ -34,14 +33,9 @@ class StepUploadArtifactsCapabilityGithubWorkflow(StepCapabilityGithubWorkflow):
         return step_upload_artifacts_to_githubwf(self.step, wf_job, reporter_sink)
 
 
-def create_artifact_prefix_from_orchestrator_name_version(o: Orchestrator) -> str:
-    return o.name_version_to_string() + "-"
-
-
 @dataclass
 class StepUploadArtifacts(StepBase):
     base_install_dir: Path
-    artifact_prefix: str
 
     def __post_init__(self) -> None:
         self.add_capability(StepUploadArtifactsCapabilityGithubWorkflow(self), StepCapabilityGithubWorkflow)
@@ -53,7 +47,10 @@ def step_upload_artifacts_to_githubwf(
 
     install_subdir = create_context_os_architecture_compiler_generator_string_github_matrix()
 
-    artifact_name = f"{step.artifact_prefix}{install_subdir}"
+    artifact_name = create_artifact_name(
+        project_name_and_version=wf_job.orchestrator_description.name_and_version_string,
+        context_os_architecture_compiler_generator_string=install_subdir,
+    )
 
     steps: list[GithubStepInterface] = [
         StepGitHubUploadArtifacts(
