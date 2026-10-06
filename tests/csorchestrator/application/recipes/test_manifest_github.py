@@ -56,6 +56,8 @@ def _release_manifest(
     return ReleaseManifest(
         project_name=PROJECT_NAME,
         project_version=PROJECT_VERSION,
+        packages={name for (_, pairs) in enumerate(pairs_per_variant) for (name, _) in pairs},
+        headers_only_packages=set(),
         additional_files=[],
         output_bundle_file_name=None,
         variants=[
@@ -233,6 +235,8 @@ def _release_manifest_with_bundle(bundle_file_name: str | None) -> ReleaseManife
     return ReleaseManifest(
         project_name=PROJECT_NAME,
         project_version=PROJECT_VERSION,
+        packages=set(),
+        headers_only_packages=set(),
         additional_files=["csBaseLibs/csorchestrator_config.py"],
         output_bundle_file_name=bundle_file_name,
         variants=[],

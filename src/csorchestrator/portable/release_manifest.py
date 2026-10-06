@@ -58,11 +58,18 @@ class ManifestVersionsEntry:
 class ReleaseManifest:
     project_name: str
     project_version: str
+
     additional_files: list[str]
+
+    packages: set[str]
+    headers_only_packages: set[str]
+
     output_bundle_file_name: str | None
+
     variants: list[ManifestVersionsEntry] = field(default_factory=list)
 
     MANIFEST_VERSION: ClassVar[str] = "1.0"
+
     manifest_version: str = MANIFEST_VERSION
 
     CSORCHESTRATOR_MANIFEST_EXTENSION: ClassVar[str] = ".csOrchestratorManifest"
@@ -74,9 +81,11 @@ class ReleaseManifest:
                 "manifest_version": self.manifest_version,
                 "project_name": self.project_name,
                 "project_version": self.project_version,
-                "variants": [variant.to_dict() for variant in self.variants],
                 "additional_files": list(self.additional_files),
+                "packages": list(self.packages),
+                "headers_only_packages": list(self.headers_only_packages),
                 "output_bundle_file_name": self.output_bundle_file_name,
+                "variants": [variant.to_dict() for variant in self.variants],
             }
         }
 
@@ -87,9 +96,11 @@ class ReleaseManifest:
             manifest_version=in_data["manifest_version"],
             project_name=in_data["project_name"],
             project_version=in_data["project_version"],
-            variants=[ManifestVersionsEntry.from_dict(variant) for variant in in_data["variants"]],
             additional_files=in_data["additional_files"],
+            packages=set(in_data["packages"]),
+            headers_only_packages=set(in_data["headers_only_packages"]),
             output_bundle_file_name=in_data["output_bundle_file_name"],
+            variants=[ManifestVersionsEntry.from_dict(variant) for variant in in_data["variants"]],
         )
 
     def write_release_manifest(
@@ -142,6 +153,8 @@ def get_package_versions_and_write_single_variant_manifest(
     manifest = ReleaseManifest(
         project_name=project_name,
         project_version=project_version,
+        packages={package.name for package in entry.entries},
+        headers_only_packages=set(),
         variants=[entry],
         additional_files=[],
         output_bundle_file_name=None,
@@ -301,6 +314,13 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
         (name, PublishPackageMode.ON_VARIANT) for name in packages_names_set if name not in repo_publish_config_dict
     )
 
+    on_variant_packages: set[str] = {
+        package for package, config in repo_publish_config_dict.items() if config == PublishPackageMode.ON_VARIANT
+    }
+    headers_only_packages: set[str] = {
+        package for package, config in repo_publish_config_dict.items() if config == PublishPackageMode.ON_VARIANT
+    }
+
     project_name_and_version = ManifestVersionsEntry.compose_name_version_to_string(project_name, project_version)
 
     final_collected_version_entries: list[ManifestVersionsEntry] = []
@@ -417,6 +437,8 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
     release_manifest = ReleaseManifest(
         project_name=project_name,
         project_version=project_version,
+        packages=on_variant_packages,
+        headers_only_packages=headers_only_packages,
         variants=final_collected_version_entries,
         additional_files=[file.as_posix() for file in list_additional_files],
         output_bundle_file_name=output_bundle_file_name.as_posix(),
