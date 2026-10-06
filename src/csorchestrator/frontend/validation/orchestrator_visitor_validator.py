@@ -18,7 +18,7 @@ class StepValidatorBase(ABC):
 @dataclass
 class StepCapabilityValidation(StepCapability):
     @classmethod
-    def createValidator(cls) -> StepValidatorBase | None:
+    def create_validator(cls) -> StepValidatorBase | None:
         return None  # need to be implemented in subclasses
 
 
@@ -48,9 +48,9 @@ class OrchestratorVisitorValidator(OrchestratorVisitorBase):
             if capability is None:
                 return Report().append_info(f"skip step {step.name} because it does not need validation")
 
-            validator = type(capability).createValidator()
+            validator = type(capability).create_validator()
             if validator is None:
-                return Report().append_error("Error, createValidator() returned None")
+                return Report().append_error("Error, create_validator() returned None")
 
             self._step_validators_per_type[step_type] = validator
 

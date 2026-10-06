@@ -11,8 +11,7 @@ from csorchestrator.domain.orchestrator.orchestrator import OrchestratorDescript
 @dataclass(frozen=True)
 class ReleaseCreationContextLocalExecution:
     os_architecture_compiler_generator_list: list[ContextOsArchitectureCompilerGenerator]
-    orchestrator_name: str
-    orchestrator_version: str
     orchestrator_description: OrchestratorDescription
     os_architecture: ContextOsArchitecture
     base_path: Path
+    script_folder_path: Path

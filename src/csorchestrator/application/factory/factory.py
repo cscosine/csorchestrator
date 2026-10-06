@@ -9,20 +9,13 @@ from csorchestrator.frontend.cscmake_presets.supported_variants import get_suppo
 
 
 def create_orchestrator_factory_all_supported_cases(
-    name: str,
-    version: str,
-    execution_matrix_name: str,
-    use_ninja_for_windows: bool = False,
-    use_ninja: bool = True,
-    use_ninjamulti: bool = True,
+    name: str, version: str, execution_matrix_name: str, populate_default_matrix: bool = True
 ) -> Orchestrator:
 
     em = ExecutionMatrixOsArchCompilerGenerator(execution_matrix_name)
-    em.os_architecture_compiler_generator_list = get_supported_context_os_architecture_list(
-        use_ninja_for_windows=use_ninja_for_windows,
-        use_ninja=use_ninja,
-        use_ninjamulti=use_ninjamulti,
-    )
+
+    if populate_default_matrix:
+        em.os_architecture_compiler_generator_list = get_supported_context_os_architecture_list()
 
     o = Orchestrator(
         name=name,

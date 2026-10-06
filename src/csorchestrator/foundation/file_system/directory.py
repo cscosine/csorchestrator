@@ -9,12 +9,7 @@ from csorchestrator.foundation.core.expected import Expected
 ExpectedPathOrError: TypeAlias = Expected[Path, str]
 
 
-def ensure_directory_exists_or_create_and_is_usable(path: str) -> ExpectedPathOrError:
-    if not path.strip():
-        return Expected[Path, str].make_error(
-            "ensure_directory_exists_or_create_and_is_usable: input parameter empty directory to create"
-        )
-
+def ensure_directory_exists_or_create_and_is_usable(path: Path) -> ExpectedPathOrError:
     try:
         # Expand ~ and environment variables, then resolve
         p = Path(os.path.expandvars(os.path.expanduser(path))).resolve()

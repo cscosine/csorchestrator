@@ -22,12 +22,12 @@
       "justMyCode": false
     },
     {
-      "name": "\ud83d\udcc1 tests/csorchestrator/ci/github tests",
+      "name": "\ud83d\udcc1 tests/csorchestrator/application/recipes tests",
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
       "args": [
-        "tests/csorchestrator/ci/github"
+        "tests/csorchestrator/application/recipes"
       ],
       "justMyCode": false
     },
@@ -312,12 +312,172 @@
       "justMyCode": false
     },
     {
-      "name": "\ud83e\uddea tests/csorchestrator/ci/github/test_github_workflow_config \u2192 test_workflow_with_triggers",
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_create_steps_to_get_libs_from_manifest_creates_one_step_per_lib_with_default_phase_name",
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
       "args": [
-        "tests/csorchestrator/ci/github/test_github_workflow_config.py::test_workflow_with_triggers"
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_create_steps_to_get_libs_from_manifest_creates_one_step_per_lib_with_default_phase_name"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_create_steps_to_get_libs_from_manifest_custom_phase_name",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_create_steps_to_get_libs_from_manifest_custom_phase_name"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_create_steps_to_get_libs_from_manifest_empty_manifest_creates_empty_phase",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_create_steps_to_get_libs_from_manifest_empty_manifest_creates_empty_phase"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_create_steps_to_get_libs_from_manifest_errors_when_lib_has_multiple_versions",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_create_steps_to_get_libs_from_manifest_errors_when_lib_has_multiple_versions"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_create_steps_to_get_libs_from_manifest_lib_declared_only_in_one_variant",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_create_steps_to_get_libs_from_manifest_lib_declared_only_in_one_variant"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_create_steps_to_get_libs_from_manifest_subsample_with_lib_name_list",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_create_steps_to_get_libs_from_manifest_subsample_with_lib_name_list"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_create_steps_to_get_libs_from_manifest_unknown_lib_in_list_errors",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_create_steps_to_get_libs_from_manifest_unknown_lib_in_list_errors"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_download_manifest_bundle_download_error_reported",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_download_manifest_bundle_download_error_reported"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_download_manifest_bundle_downloads_and_extracts",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_download_manifest_bundle_downloads_and_extracts"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_download_manifest_bundle_no_bundle_declared_does_nothing",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_download_manifest_bundle_no_bundle_declared_does_nothing"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_resolve_library_dependencies_expands_direct_dependencies",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_resolve_library_dependencies_expands_direct_dependencies"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_resolve_library_dependencies_expands_transitive_dependencies",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_resolve_library_dependencies_expands_transitive_dependencies"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_resolve_library_dependencies_lib_without_declared_dependencies",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_resolve_library_dependencies_lib_without_declared_dependencies"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_resolve_library_dependencies_no_mapping_returns_list_unchanged",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_resolve_library_dependencies_no_mapping_returns_list_unchanged"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_resolve_library_dependencies_none_list_returns_none",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_resolve_library_dependencies_none_list_returns_none"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/cli/test_cli \u2192 test_describe_command_missing_create_orchestrator",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/cli/test_cli.py::test_describe_command_missing_create_orchestrator"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/cli/test_cli \u2192 test_describe_command_prints_description",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/cli/test_cli.py::test_describe_command_prints_description"
       ],
       "justMyCode": false
     },
@@ -338,26 +498,6 @@
       "module": "pytest",
       "args": [
         "tests/csorchestrator/cli/test_cli.py::test_run_command_missing_create_orchestrator"
-      ],
-      "justMyCode": false
-    },
-    {
-      "name": "\ud83e\uddea tests/csorchestrator/context/test_context_local_execution \u2192 test_create_context_empty_path_invalid",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "pytest",
-      "args": [
-        "tests/csorchestrator/context/test_context_local_execution.py::test_create_context_empty_path_invalid"
-      ],
-      "justMyCode": false
-    },
-    {
-      "name": "\ud83e\uddea tests/csorchestrator/context/test_context_local_execution \u2192 test_create_context_invalid_detect_context_os_architecture",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "pytest",
-      "args": [
-        "tests/csorchestrator/context/test_context_local_execution.py::test_create_context_invalid_detect_context_os_architecture"
       ],
       "justMyCode": false
     },
@@ -872,6 +1012,36 @@
       "justMyCode": false
     },
     {
+      "name": "\ud83e\uddea tests/csorchestrator/orchestrator/test_orchestrator \u2192 test_orchestrator_append_merges_phases",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/orchestrator/test_orchestrator.py::test_orchestrator_append_merges_phases"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/orchestrator/test_orchestrator \u2192 test_orchestrator_append_reuses_source_with_different_prefixes",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/orchestrator/test_orchestrator.py::test_orchestrator_append_reuses_source_with_different_prefixes"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/orchestrator/test_orchestrator \u2192 test_orchestrator_append_with_prefix_namespaces_phase_and_step_names",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/orchestrator/test_orchestrator.py::test_orchestrator_append_with_prefix_namespaces_phase_and_step_names"
+      ],
+      "justMyCode": false
+    },
+    {
       "name": "\ud83e\uddea tests/csorchestrator/orchestrator/test_orchestrator \u2192 test_orchestrator_executor_minimal_description",
       "type": "debugpy",
       "request": "launch",
@@ -1342,16 +1512,6 @@
       "justMyCode": false
     },
     {
-      "name": "\ud83e\uddea tests/csorchestrator/utils/filesystem/test_directory \u2192 test_empty_path_invalid",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "pytest",
-      "args": [
-        "tests/csorchestrator/utils/filesystem/test_directory.py::test_empty_path_invalid"
-      ],
-      "justMyCode": false
-    },
-    {
       "name": "\ud83e\uddea tests/csorchestrator/utils/filesystem/test_directory \u2192 test_existing_directory",
       "type": "debugpy",
       "request": "launch",
@@ -1472,26 +1632,6 @@
       "justMyCode": false
     },
     {
-      "name": "\ud83e\uddea tests/csorchestrator/utils/git/test_repo_clone_checkout \u2192 test_try_git_clone_checkout_HEAD[False]",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "pytest",
-      "args": [
-        "tests/csorchestrator/utils/git/test_repo_clone_checkout.py::test_try_git_clone_checkout_HEAD[False]"
-      ],
-      "justMyCode": false
-    },
-    {
-      "name": "\ud83e\uddea tests/csorchestrator/utils/git/test_repo_clone_checkout \u2192 test_try_git_clone_checkout_HEAD[True]",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "pytest",
-      "args": [
-        "tests/csorchestrator/utils/git/test_repo_clone_checkout.py::test_try_git_clone_checkout_HEAD[True]"
-      ],
-      "justMyCode": false
-    },
-    {
       "name": "\ud83e\uddea tests/csorchestrator/utils/git/test_repo_clone_checkout \u2192 test_try_git_clone_checkout_branch_dev[False]",
       "type": "debugpy",
       "request": "launch",
@@ -1548,6 +1688,26 @@
       "module": "pytest",
       "args": [
         "tests/csorchestrator/utils/git/test_repo_clone_checkout.py::test_try_git_clone_checkout_branch_origin_main[True]"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/utils/git/test_repo_clone_checkout \u2192 test_try_git_clone_checkout_head[False]",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/utils/git/test_repo_clone_checkout.py::test_try_git_clone_checkout_head[False]"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/utils/git/test_repo_clone_checkout \u2192 test_try_git_clone_checkout_head[True]",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/utils/git/test_repo_clone_checkout.py::test_try_git_clone_checkout_head[True]"
       ],
       "justMyCode": false
     },

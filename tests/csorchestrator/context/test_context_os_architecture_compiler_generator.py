@@ -9,13 +9,13 @@ from csorchestrator.domain.context.context_os_architecture import (
     ARCHITECTURE_VARIANT_ARM64_ORIN,
     ARCHITECTURE_VARIANT_GENERIC,
     OS,
-    UBUNTU_VERSIONS,
-    WINDOWS_VERSIONS,
     Architecture,
     ContextOsArchitecture,
+    UbuntuVersions,
+    WindowsVersions,
 )
 from csorchestrator.domain.context.context_os_architecture_compiler_generator import (
-    CS_ORCHESTRATOR_SCHEMA_VERSION,
+    CSORCHESTRATOR_SCHEMA_VERSION,
     ContextOsArchitectureCompilerGenerator,
     create_context_os_architecture_compiler_generator_string,
 )
@@ -24,7 +24,7 @@ from csorchestrator.domain.context.context_os_architecture_compiler_generator im
 def test_basic_linux_ninja_clang():
     context_os = ContextOsArchitecture(
         os=OS.LINUX,
-        os_version=UBUNTU_VERSIONS.UBUNTU_24_04.value,
+        os_version=UbuntuVersions.UBUNTU_24_04.value,
         architecture=Architecture.ARM64,
         architecture_variant=ARCHITECTURE_VARIANT_ARM64_ORIN,
     )
@@ -41,9 +41,9 @@ def test_basic_linux_ninja_clang():
 
     assert result == "-".join(
         [
-            CS_ORCHESTRATOR_SCHEMA_VERSION,
+            CSORCHESTRATOR_SCHEMA_VERSION,
             OS.LINUX.value,
-            UBUNTU_VERSIONS.UBUNTU_24_04.value,
+            UbuntuVersions.UBUNTU_24_04.value,
             Architecture.ARM64.value,
             ARCHITECTURE_VARIANT_ARM64_ORIN,
             Compiler.CLANG.value,
@@ -56,7 +56,7 @@ def test_basic_linux_ninja_clang():
 def test_windows_msvc_vs_generator():
     context_os = ContextOsArchitecture(
         os=OS.WINDOWS,
-        os_version=WINDOWS_VERSIONS.WIN10.value,
+        os_version=WindowsVersions.WIN10.value,
         architecture=Architecture.X64,
         architecture_variant=ARCHITECTURE_VARIANT_GENERIC,
     )
@@ -73,9 +73,9 @@ def test_windows_msvc_vs_generator():
 
     assert result == "-".join(
         [
-            CS_ORCHESTRATOR_SCHEMA_VERSION,
+            CSORCHESTRATOR_SCHEMA_VERSION,
             OS.WINDOWS.value,
-            WINDOWS_VERSIONS.WIN10.value,
+            WindowsVersions.WIN10.value,
             Architecture.X64.value,
             ARCHITECTURE_VARIANT_GENERIC,
             Compiler.MSVC.value,
@@ -105,7 +105,7 @@ def test_macos_appleclang_ninja_multiconfig():
 
     assert result == "-".join(
         [
-            CS_ORCHESTRATOR_SCHEMA_VERSION,
+            CSORCHESTRATOR_SCHEMA_VERSION,
             OS.MACOS.value,
             "v14",
             Architecture.ARM64.value,
@@ -120,7 +120,7 @@ def test_macos_appleclang_ninja_multiconfig():
 def test_lowercasing_behavior():
     context_os = ContextOsArchitecture(
         os=OS.LINUX,
-        os_version=UBUNTU_VERSIONS.UBUNTU_24_04.value,
+        os_version=UbuntuVersions.UBUNTU_24_04.value,
         architecture=Architecture.ARM64,
         architecture_variant=ARCHITECTURE_VARIANT_ARM64_ORIN.upper(),
     )
@@ -138,9 +138,9 @@ def test_lowercasing_behavior():
 
     assert result == "-".join(
         [
-            CS_ORCHESTRATOR_SCHEMA_VERSION,
+            CSORCHESTRATOR_SCHEMA_VERSION,
             OS.LINUX.value,
-            UBUNTU_VERSIONS.UBUNTU_24_04.value,
+            UbuntuVersions.UBUNTU_24_04.value,
             Architecture.ARM64.value,
             ARCHITECTURE_VARIANT_ARM64_ORIN,
             Compiler.CLANG.value,

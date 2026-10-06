@@ -9,7 +9,7 @@ from csorchestrator.domain.context.context_os_architecture import (
     Architecture,
 )
 
-CS_ORCHESTRATOR_SCHEMA_VERSION_SHORT = "v1"
+CSORCHESTRATOR_SCHEMA_VERSION_SHORT = "v1"
 
 
 def short_os_name(os: OS) -> str:

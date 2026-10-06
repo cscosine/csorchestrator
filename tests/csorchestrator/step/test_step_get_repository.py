@@ -8,6 +8,7 @@ from csorchestrator.domain.context.context_compiler_generator import (
     ContextCompilerGenerator,
     GeneratorWithType,
 )
+from csorchestrator.domain.orchestrator.orchestrator import OrchestratorDescription
 from csorchestrator.domain.orchestrator.step_base import StepExtra
 from csorchestrator.foundation.git.resolve_url import RepoUrlParts
 from csorchestrator.frontend.local_execution.context_local_execution import ContextLocalExecution
@@ -160,10 +161,18 @@ def test_execute_step_get_repository_success(
     if depth_one:
         step.add_extra(StepGetRepositoryExtraDepthOne(on_local_checkout=True, on_github_action_checkout=True))
 
-    os_path_opt = create_os_and_path(str(tmp_path))
+    os_path_opt = create_os_and_path(tmp_path)
     assert os_path_opt.result is not None
 
+    o = OrchestratorDescription(
+        orchestrator_name="test_orchestrator",
+        orchestrator_version="1.0.0",
+        name_and_version_string="test_orchestrator-1.0.0",
+    )
+
     context = ContextLocalExecution(
+        orchestrator_description=o,
+        script_folder_path=os_path_opt.result.path,
         base_folder_path=os_path_opt.result.path,
         os_architecture=os_path_opt.result.os_architecture,
         active_compiler_generator=ContextCompilerGenerator(
@@ -227,10 +236,18 @@ def test_execute_step_get_repository_update_fails(tmp_path: Path, repo_url: Repo
     if depth_one:
         step.add_extra(StepGetRepositoryExtraDepthOne(on_local_checkout=True, on_github_action_checkout=True))
 
-    os_path_opt = create_os_and_path(str(tmp_path))
+    os_path_opt = create_os_and_path(tmp_path)
     assert os_path_opt.result is not None
 
+    o = OrchestratorDescription(
+        orchestrator_name="test_orchestrator",
+        orchestrator_version="1.0.0",
+        name_and_version_string="test_orchestrator-1.0.0",
+    )
+
     context = ContextLocalExecution(
+        orchestrator_description=o,
+        script_folder_path=os_path_opt.result.path,
         base_folder_path=os_path_opt.result.path,
         os_architecture=os_path_opt.result.os_architecture,
         active_compiler_generator=ContextCompilerGenerator(

@@ -1,4 +1,5 @@
 from abc import ABC
+from copy import deepcopy
 from dataclasses import dataclass, field
 
 from csorchestrator.domain.orchestrator.orchestrator_minimal_description import (
@@ -7,6 +8,7 @@ from csorchestrator.domain.orchestrator.orchestrator_minimal_description import 
 )
 from csorchestrator.domain.orchestrator.phase import Phase
 from csorchestrator.domain.orchestrator.workflow_config import WorkflowConfig
+from csorchestrator.portable.release_manifest import ManifestVersionsEntry
 
 
 # TODO support capabilities here to be more generic?
@@ -41,15 +43,19 @@ class Orchestrator:
     phases: list[Phase] = field(default_factory=list)
     wf_config: WorkflowConfig | None = None
 
-    def createOrchestratorDescription(self) -> OrchestratorDescription:
+    def create_orchestrator_description(self) -> OrchestratorDescription:
         return OrchestratorDescription(
             orchestrator_name=self.name,
             orchestrator_version=self.version,
             name_and_version_string=self.name_version_to_string(),
         )
 
+    @classmethod
+    def compose_name_version_to_string(cls, name: str, version: str) -> str:
+        return ManifestVersionsEntry.compose_name_version_to_string(name=name, version=version)
+
     def name_version_to_string(self) -> str:
-        return f"{self.name}-{self.version}"
+        return Orchestrator.compose_name_version_to_string(self.name, self.version)
 
     def add_phase(self, phase: Phase) -> "Orchestrator":
         self.phases.append(phase)
@@ -59,6 +65,28 @@ class Orchestrator:
         phase = Phase(phase_name)
         self.phases.append(phase)
         return phase
+
+    def append(self, other: "Orchestrator", prefix: str = "") -> "Orchestrator":
+        """Append all phases of ``other`` to this orchestrator.
+
+        Phase names are unique within an orchestrator and step names are
+        unique within a phase (enforced by the orchestrator validation). When
+        ``other`` was filled by helpers that may emit phase/step names already
+        present here (e.g. the same precompiled library downloaded once per
+        providing release), pass ``prefix`` to namespace every appended phase
+        and step name.
+
+        The phases are deep-copied, so ``other`` is left untouched and can be
+        appended multiple times with different prefixes.
+        """
+        for phase in other.phases:
+            copied_phase = deepcopy(phase)
+            if prefix:
+                copied_phase.name = f"{prefix}{copied_phase.name}"
+                for step in copied_phase.steps:
+                    step.name = f"{prefix}{step.name}"
+            self.add_phase(copied_phase)
+        return self
 
     def extract_minimal_description(self) -> OrchestratorExecutorMinimalDescription:
         ret = OrchestratorExecutorMinimalDescription(name=self.name, version=self.version)

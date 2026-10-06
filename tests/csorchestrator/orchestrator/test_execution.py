@@ -34,7 +34,10 @@ def test_validate_and_execute_orchestrator_success(tmp_path: Path, repo_url: Rep
     orchestrator.add_phase(Phase(name="repos checkout").add_step(step))
 
     er: ExecutionResult = validate_and_execute_orchestrator(
-        orchestrator, target_folder_path=str(tmp_path), reporter=OrchestratorExecutorReporterDummy()
+        orchestrator=orchestrator,
+        script_folder_path=tmp_path,
+        target_folder_path=tmp_path,
+        reporter=OrchestratorExecutorReporterDummy(),
     )
     assert not er.report_pre_execution.has_errors()
     assert er.execution_description is not None
@@ -54,7 +57,10 @@ def test_validate_and_execute_orchestrator_fail_pre_execution(tmp_path: Path) ->
     orchestrator = create_orchestrator_factory_all_supported_cases("myName", "0.0.0", "exec-job")
 
     er: ExecutionResult = validate_and_execute_orchestrator(
-        orchestrator, target_folder_path=str(file_path), reporter=OrchestratorExecutorReporterDummy()
+        orchestrator=orchestrator,
+        script_folder_path=tmp_path,
+        target_folder_path=file_path,
+        reporter=OrchestratorExecutorReporterDummy(),
     )
 
     assert er.report_pre_execution.has_errors()
@@ -81,7 +87,10 @@ def test_validate_and_execute_orchestrator_fail_validation(tmp_path: Path, repo_
     orchestrator.add_phase(p)
 
     er: ExecutionResult = validate_and_execute_orchestrator(
-        orchestrator, target_folder_path=str(tmp_path), reporter=OrchestratorExecutorReporterDummy()
+        orchestrator=orchestrator,
+        script_folder_path=tmp_path,
+        target_folder_path=tmp_path,
+        reporter=OrchestratorExecutorReporterDummy(),
     )
 
     assert er.report_pre_execution.has_errors()

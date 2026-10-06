@@ -8,12 +8,16 @@ from csorchestrator.foundation.file_system.path import is_clean_relative_path
 from csorchestrator.foundation.git.repo_clone_checkout import try_git_clone_checkout
 from csorchestrator.foundation.git.repo_validate_and_sync import validate_and_sync_repo
 from csorchestrator.foundation.git.resolve_url import RepoUrlParts
-from csorchestrator.frontend.github_workflow_translation.github_workflow_config import JobOrchestratorMatrixExecution
-from csorchestrator.frontend.github_workflow_translation.github_workflow_steps_transations import (
+from csorchestrator.frontend.github_workflow_translation.github_step_interface import GithubStepInterface
+from csorchestrator.frontend.github_workflow_translation.github_workflow_steps_translations import (
     StepCheckoutRepository,
     StepCheckoutRepositoryWith,
 )
+from csorchestrator.frontend.github_workflow_translation.matrix_execution_context import (
+    JobOrchestratorMatrixExecutionContext,
+)
 from csorchestrator.frontend.github_workflow_translation.orchestrator_visitor_github_wf_generator import (
+    OptionalListGithubStepsWithReport,
     StepCapabilityGithubWorkflow,
 )
 from csorchestrator.frontend.local_execution.context_local_execution import ContextLocalExecution
@@ -28,7 +32,9 @@ from csorchestrator.frontend.validation.orchestrator_visitor_validator import (
 class StepGetRepositoryGitHubSelfCapabilityGithubWorkflow(StepCapabilityGithubWorkflow):
     step: "StepGetRepositoryGitHubSelf"
 
-    def to_githubwf(self, wf_job: JobOrchestratorMatrixExecution, reporter_sink: ReporterSinkBase) -> Report:
+    def to_githubwf(
+        self, wf_job: JobOrchestratorMatrixExecutionContext, reporter_sink: ReporterSinkBase
+    ) -> OptionalListGithubStepsWithReport:
         return step_get_repository_self_to_githubwf(self.step, wf_job, reporter_sink)
 
 
@@ -42,7 +48,9 @@ class StepGetRepositoryGitHubSelf(StepBase):
 class StepGetRepositoryGitHubCapabilityGithubWorkflow(StepCapabilityGithubWorkflow):
     step: "StepGetRepositoryGitHub"
 
-    def to_githubwf(self, wf_job: JobOrchestratorMatrixExecution, reporter_sink: ReporterSinkBase) -> Report:
+    def to_githubwf(
+        self, wf_job: JobOrchestratorMatrixExecutionContext, reporter_sink: ReporterSinkBase
+    ) -> OptionalListGithubStepsWithReport:
         return step_get_repository_to_githubwf(self.step, wf_job, reporter_sink)
 
 
@@ -57,7 +65,7 @@ class StepGetRepositoryGitHubCapabilityLocalExecution(StepCapabilityLocalExecuti
 @dataclass
 class StepGetRepositoryGitHubCapabilityValidation(StepCapabilityValidation):
     @classmethod
-    def createValidator(cls) -> StepValidatorBase | None:
+    def create_validator(cls) -> StepValidatorBase | None:
         return StepGetRepositoryValidator()
 
 
@@ -137,20 +145,21 @@ def execute_step_get_repository(
 
 
 def step_get_repository_self_to_githubwf(
-    step: StepGetRepositoryGitHubSelf, wf_job: JobOrchestratorMatrixExecution, reporter_sink: ReporterSinkBase
-) -> Report:
-    wf_job.steps.append(
+    step: StepGetRepositoryGitHubSelf, wf_job: JobOrchestratorMatrixExecutionContext, reporter_sink: ReporterSinkBase
+) -> OptionalListGithubStepsWithReport:
+
+    steps: list[GithubStepInterface] = [
         StepCheckoutRepository(
             name=step.name,
         )
-    )
-    return Report()
+    ]
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())
 
 
 def step_get_repository_to_githubwf(
-    step: StepGetRepositoryGitHub, wf_job: JobOrchestratorMatrixExecution, reporter_sink: ReporterSinkBase
-) -> Report:
-    wf_job.steps.append(
+    step: StepGetRepositoryGitHub, wf_job: JobOrchestratorMatrixExecutionContext, reporter_sink: ReporterSinkBase
+) -> OptionalListGithubStepsWithReport:
+    steps: list[GithubStepInterface] = [
         StepCheckoutRepository(
             name=step.name,
             with_step=StepCheckoutRepositoryWith(
@@ -163,8 +172,8 @@ def step_get_repository_to_githubwf(
                 token=StepGetRepositoryExtraAccessToken.get_token_name_or_none(step),
             ),
         )
-    )
-    return Report()
+    ]
+    return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())
 
 
 def validate_step_get_repository(step: StepGetRepositoryGitHub) -> Report:

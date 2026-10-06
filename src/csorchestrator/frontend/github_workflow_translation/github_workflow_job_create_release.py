@@ -1,90 +1,122 @@
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
-from csorchestrator.domain.context.context_os_architecture_compiler_generator import (
-    ContextOsArchitectureCompilerGenerator,
-)
-from csorchestrator.domain.orchestrator.orchestrator import OrchestratorDescription
 from csorchestrator.domain.orchestrator.workflow_config import (
     ReleaseCreationOnTagConfigBase,
     ReleaseCreationOnTagConfigBaseCapability,
 )
-from csorchestrator.foundation.core.strings_utils import string_indent
+from csorchestrator.frontend.github_workflow_translation.github_workflow_steps_translations import (
+    CleanArtifactsFolder,
+    CreateGitHubRelease,
+    DownloadAllArtifacts,
+    ShowDownloadedFiles,
+    StepCheckoutRepository,
+    StepGitHubUploadArtifacts,
+)
+from csorchestrator.frontend.github_workflow_translation.release_creation_context import ReleaseCreationContext
 
 
 class ReleaseCreationOnTagConfigBaseCapabilityGithubWorkflow(ReleaseCreationOnTagConfigBaseCapability):
-    def to_githubwf_lines(
-        self,
-        matrix_list: list[ContextOsArchitectureCompilerGenerator],
-        orchestrator_description: OrchestratorDescription,
-        artifacts_folder: str,
-    ) -> list[str]:
+    # TODO: make virtual methods
+
+    def to_steps_dict(self, release_creation_context: ReleaseCreationContext) -> list[dict[str, Any]]:
         return []
 
-    def getReleaseFilesExtension(self) -> str | None:
-        return None
+    def get_artifacts_dir(self) -> str:
+        return ""
+
+    def get_output_bundle_filename(self) -> Path:
+        return Path()
+
+    def has_additional_files_for_bundle(self) -> bool:
+        return False
+
+    def get_output_folder_for_generated_files(self) -> Path:
+        return Path()
+
+    def get_output_manifest_filename(self, project_name_and_version_string: str) -> Path:
+        return Path()
 
 
 @dataclass
 class JobReleaseCreationFromArtifacts:
     config: ReleaseCreationOnTagConfigBase
     needs: str
-    matrix_list: list[ContextOsArchitectureCompilerGenerator]
-    orchestrator_description: OrchestratorDescription
+    release_creation_context: ReleaseCreationContext
     runs_on: str
     if_str: str
+    self_checkout_repo: bool = True
 
+    def to_dict(self) -> dict[str, Any]:
 
-def job_release_on_tag_to_string_lines(job: JobReleaseCreationFromArtifacts, indent: int = 0) -> list[str]:
-    artifacts_folder = "artifacts"
+        steps = []
+        capability = self.config.get_capability(ReleaseCreationOnTagConfigBaseCapabilityGithubWorkflow)
+        if capability is None:
+            return {}  # this should be an error to be reported
 
-    capability = job.config.get_capability(ReleaseCreationOnTagConfigBaseCapabilityGithubWorkflow)
-    add_lines = []
-    if capability is not None:
-        add_lines = capability.to_githubwf_lines(job.matrix_list, job.orchestrator_description, artifacts_folder)
+        artifacts_dir = capability.get_artifacts_dir()
+        output_bundle_file = capability.get_output_bundle_filename()
+        has_additional_files_for_bundle = capability.has_additional_files_for_bundle()
+        output_folder_for_generated_files = capability.get_output_folder_for_generated_files()
+        output_manifest_filename = capability.get_output_manifest_filename(
+            self.release_creation_context.orchestrator_description.name_and_version_string
+        )
 
-    line_list = [f"{string_indent(indent)}{job.config.name}:"]
-    line_list += [f"{string_indent(indent + 2)}needs: {job.needs}"]
-    line_list += [f"{string_indent(indent + 2)}runs-on: {job.runs_on}"]
-    line_list += [""]
-    line_list += [""]
-    line_list += [f"{string_indent(indent + 2)}permissions:"]
-    line_list += [f"{string_indent(indent + 4)}contents: write"]
-    line_list += [""]
-    line_list += [f"{string_indent(indent + 2)}steps:"]
-    line_list += [f"{string_indent(indent + 4)}- name: Download all artifacts"]
-    line_list += [f"{string_indent(indent + 6)}uses: actions/download-artifact@v8"]
-    line_list += [f"{string_indent(indent + 6)}with:"]
-    line_list += [f"{string_indent(indent + 8)}path: {artifacts_folder}"]
-    line_list += [""]
-    line_list += [f"{string_indent(indent + 4)}- name: Show downloaded files"]
-    line_list += [f"{string_indent(indent + 6)}run: find {artifacts_folder} -type f"]
-    line_list += [""]
-    if len(add_lines) > 0:
-        for line in add_lines:
-            if line != "":
-                line_list += [f"{string_indent(indent + 4)}{line}"]
-            else:
-                line_list += [""]
+        output_manifest_path = Path(artifacts_dir) / output_folder_for_generated_files / output_manifest_filename
+        output_bundle_path = Path(artifacts_dir) / output_folder_for_generated_files / output_bundle_file
 
-    if capability is not None:
-        ext = capability.getReleaseFilesExtension()
-        if ext is not None:
-            line_list += [f"{string_indent(indent + 4)}- name: Upload manifest"]
-            line_list += [f"{string_indent(indent + 4)}  uses: actions/upload-artifact@v4"]
-            line_list += [f"{string_indent(indent + 4)}  with:"]
-            line_list += [f"{string_indent(indent + 4)}    name: manifest" + ext]
-            line_list += [f"{string_indent(indent + 4)}    path: artifacts/**/*" + ext]
-            line_list += [""]
+        additional_files_for_release_list: list[Path] = [output_manifest_path]
+        if has_additional_files_for_bundle:
+            additional_files_for_release_list.append(output_bundle_path)
 
-    line_list += [f"{string_indent(indent + 4)}- name: Create GitHub Release"]
-    line_list += [f"{string_indent(indent + 6)}if: {job.if_str}"]
-    line_list += [f"{string_indent(indent + 6)}uses: softprops/action-gh-release@v3"]
-    line_list += [f"{string_indent(indent + 6)}with:"]
-    line_list += [f"{string_indent(indent + 8)}files: |"]
-    line_list += [f"{string_indent(indent + 10)}{artifacts_folder}/**/*.tar.gz"]
-    if capability is not None:
-        ext = capability.getReleaseFilesExtension()
-        if ext is not None:
-            line_list += [f"{string_indent(indent + 10)}{artifacts_folder}/**/*" + ext]
-    line_list += [""]
-    return line_list
+        if self.self_checkout_repo:
+            steps += [
+                StepCheckoutRepository(
+                    name="Repo Self Checkout",
+                ).to_dict(),
+            ]
+
+        steps += [
+            # clean folder is necessary in case a second exec of the release job is required
+            # e.g. a retry in case of infra issues
+            CleanArtifactsFolder(artifacts_dir).to_dict(),
+            DownloadAllArtifacts(artifacts_dir).to_dict(),
+            ShowDownloadedFiles(artifacts_dir).to_dict(),
+        ]
+
+        steps.extend(capability.to_steps_dict(self.release_creation_context))
+
+        steps.append(
+            StepGitHubUploadArtifacts(
+                name="Upload manifest as artifacts",
+                with_name=output_manifest_filename.as_posix(),
+                with_path=[f"{output_manifest_path.as_posix()}"],
+            ).to_dict()
+        )
+
+        if has_additional_files_for_bundle:
+            steps.append(
+                StepGitHubUploadArtifacts(
+                    name=f"Upload additional file {str(output_bundle_file)} as artifact",
+                    with_name=output_bundle_file.as_posix(),
+                    with_path=[f"{output_bundle_path.as_posix()}"],
+                ).to_dict()
+            )
+
+        steps.append(
+            CreateGitHubRelease(
+                artifacts_folder=artifacts_dir,
+                if_str=self.if_str,
+                additional_files_list=additional_files_for_release_list,
+            ).to_dict()
+        )
+
+        return {
+            self.config.name: {
+                "needs": self.needs,
+                "runs-on": self.runs_on,
+                "permissions": {"contents": "write"},
+                "steps": steps,
+            }
+        }

@@ -18,14 +18,14 @@ OS_PLATFORM_MACOS: str = "darwin"
 VERSION_STRING_PREFIX = "v"
 
 
-class WINDOWS_VERSIONS(Enum):
+class WindowsVersions(Enum):
     WIN10 = "v10"
 
 
 UBUNTU_STRING_PREFIX = "ubuntu"
 
 
-class UBUNTU_VERSIONS(Enum):
+class UbuntuVersions(Enum):
     UBUNTU_22_04 = UBUNTU_STRING_PREFIX + "22.04"
     UBUNTU_24_04 = UBUNTU_STRING_PREFIX + "24.04"
 

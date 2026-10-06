@@ -30,7 +30,12 @@ def test_markdown_reporter_produces_valid_file(tmp_path: Path) -> None:
     phase = orchestrator.create_phase("Build")
     phase.add_step(StepEchoMessage(name="Compile", description="Compiling...", message="Compiling..."))
 
-    validate_and_execute_orchestrator(orchestrator, target_folder_path=str(tmp_path), reporter=reporter)
+    validate_and_execute_orchestrator(
+        orchestrator=orchestrator,
+        script_folder_path=tmp_path,
+        target_folder_path=tmp_path,
+        reporter=reporter,
+    )
 
     assert report_path.exists()
     content = report_path.read_text(encoding="utf-8")

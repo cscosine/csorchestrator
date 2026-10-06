@@ -40,7 +40,7 @@ class OsArchitectureAndPath:
 OptionalOsArchitectureAndPathWithReport: TypeAlias = OptionalResultWithReport[OsArchitectureAndPath]
 
 
-def _create_context_os_architecture_string(
+def create_context_os_architecture_string(
     os_architecture: ContextOsArchitecture,
 ) -> str:
     parts: list[str] = []
@@ -51,7 +51,7 @@ def _create_context_os_architecture_string(
     return "-".join(parts)
 
 
-def create_os_and_path(base_folder_path: str) -> OptionalOsArchitectureAndPathWithReport:
+def create_os_and_path(base_folder_path: Path) -> OptionalOsArchitectureAndPathWithReport:
     report = Report()
 
     pr = ensure_directory_exists_or_create_and_is_usable(base_folder_path)
@@ -59,38 +59,41 @@ def create_os_and_path(base_folder_path: str) -> OptionalOsArchitectureAndPathWi
     if pr.error is not None:
         report.append_error(pr.error)
 
-    osaExpected = detect_context_os_architecture()
+    osa_expected = detect_context_os_architecture()
 
-    if osaExpected.error is not None:
-        report.append_error(osaExpected.error)
+    if osa_expected.error is not None:
+        report.append_error(osa_expected.error)
 
-    if pr.value is not None and osaExpected.value is not None:
-        return OptionalOsArchitectureAndPathWithReport.createResultAndReport(
-            OsArchitectureAndPath(os_architecture=osaExpected.value, path=pr.value),
+    if pr.value is not None and osa_expected.value is not None:
+        return OptionalOsArchitectureAndPathWithReport.create_result_and_report(
+            OsArchitectureAndPath(os_architecture=osa_expected.value, path=pr.value),
             report,
         )
     else:
-        return OptionalOsArchitectureAndPathWithReport.createReport(report)
+        return OptionalOsArchitectureAndPathWithReport.create_report(report)
 
 
 def validate_and_execute_orchestrator(
-    orchestrator: Orchestrator, target_folder_path: str, reporter: OrchestratorExecutorReporterBase
+    orchestrator: Orchestrator,
+    script_folder_path: Path,
+    target_folder_path: Path,
+    reporter: OrchestratorExecutorReporterBase,
 ) -> ExecutionResult:
     er = ExecutionResult()
     er.execution_description = orchestrator.extract_minimal_description()
     reporter.report_execution_description(er.execution_description)
 
-    orchestratorValidatedOpt = create_validated_orchestrator(orchestrator)
-    er.report_pre_execution.append_report(orchestratorValidatedOpt.main_report)
-    er.report_validation = orchestratorValidatedOpt.validation_reports
+    orchestrator_validated_opt = create_validated_orchestrator(orchestrator)
+    er.report_pre_execution.append_report(orchestrator_validated_opt.main_report)
+    er.report_validation = orchestrator_validated_opt.validation_reports
     reporter.report_validation_report(er.report_validation)
 
-    if orchestratorValidatedOpt.orchestrator is None:
+    if orchestrator_validated_opt.orchestrator is None:
         reporter.report_pre_execution_report(er.report_pre_execution)
         reporter.finalize_execution()
         return er
 
-    orchestrator = orchestratorValidatedOpt.orchestrator
+    orchestrator = orchestrator_validated_opt.orchestrator
 
     # validated orchestrator, create context
 
@@ -110,15 +113,13 @@ def validate_and_execute_orchestrator(
     matrix = orchestrator.execution_matrix
 
     matrix_extras: dict[type, ContextLocalExecutionExtra] = {}
-    counter: int = -1
 
     assert isinstance(matrix, ExecutionMatrixOsArchCompilerGenerator)  # ensured by the validator
 
     # matrix execution
 
-    for os_architecture_compiler_generator in matrix.os_architecture_compiler_generator_list:
-        counter += 1
-
+    any_failed = False
+    for counter, os_architecture_compiler_generator in enumerate(matrix.os_architecture_compiler_generator_list):
         match = os_architecture_compiler_generator.context_os_architecture.can_be_executed_on(
             os_and_path.os_architecture
         )
@@ -126,14 +127,16 @@ def validate_and_execute_orchestrator(
             reporter.report_skip_execution(
                 "skip orchestrator execution on not compatible matrix config: "
                 f"{create_context_os_architecture_compiler_generator_string(os_architecture_compiler_generator)}"
-                f", current os and architecture:  {_create_context_os_architecture_string(os_and_path.os_architecture)}"
+                f", current os and architecture:  {create_context_os_architecture_string(os_and_path.os_architecture)}"
             )
             er.report_executions.append(None)
             continue
-        # use the compatible os_arcchitecture, not the detected one.
+        # use the compatible os_architecture, not the detected one.
         # e.g. detected os is win 11, but we select win 10 in the matrix, which is compatible
 
         context = ContextLocalExecution(
+            orchestrator_description=orchestrator.create_orchestrator_description(),
+            script_folder_path=script_folder_path,
             base_folder_path=os_and_path.path,
             os_architecture=os_architecture_compiler_generator.context_os_architecture,
             active_compiler_generator=os_architecture_compiler_generator.context_compiler_generator,
@@ -155,6 +158,7 @@ def validate_and_execute_orchestrator(
         if executor_visit_reports_has_any_error(report_execution):
             reporter.report_execution_report(report_execution)
             er.report_executions.append(report_execution)
+            any_failed = True
             break
 
         reporter.report_execution_report(report_execution)
@@ -164,10 +168,8 @@ def validate_and_execute_orchestrator(
         # keep the matrix_extras modified for the next context
         matrix_extras = context.matrix_extras
 
-    all_executions_succeded = counter == (len(matrix.os_architecture_compiler_generator_list) - 1)
-
     # end matrix execution, execute the release part if any
-    if not all_executions_succeded:
+    if any_failed:
         report = Report().append_error("post execution skipped because execution was not successfull")
         reporter.report_postexecution(report)
         er.report_post_execution.append(report)
@@ -182,12 +184,11 @@ def validate_and_execute_orchestrator(
                 er.report_post_execution.append(report)
             else:
                 release_context = ReleaseCreationContextLocalExecution(
-                    matrix.os_architecture_compiler_generator_list,
-                    orchestrator.name,
-                    orchestrator.version,
-                    orchestrator.createOrchestratorDescription(),
-                    os_and_path.os_architecture,
-                    os_and_path.path,
+                    os_architecture_compiler_generator_list=matrix.os_architecture_compiler_generator_list,
+                    orchestrator_description=orchestrator.create_orchestrator_description(),
+                    os_architecture=os_and_path.os_architecture,
+                    script_folder_path=script_folder_path,
+                    base_path=os_and_path.path,
                 )
                 report = capability.execute_locally(release_context)
                 reporter.report_postexecution(report)

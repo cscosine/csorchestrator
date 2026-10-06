@@ -109,10 +109,10 @@ class OrchestratorExecutorReporterPrint(OrchestratorExecutorReporterBase):
         self.reporter_sink.stdout(f"[Start Execution {exec_desc}]")
         self.reporter_sink.increase_indentation()
 
-    def report_execution_report(self, reportVisit: OrchestratorExecutorVisitReports) -> None:
+    def report_execution_report(self, report_visit: OrchestratorExecutorVisitReports) -> None:
         self.reporter_sink.stdout("[Execution Report]")
         self.reporter_sink.increase_indentation()
-        for phase_report in reportVisit:
+        for phase_report in report_visit:
             self.reporter_sink.increase_indentation()
             for step_report in phase_report:
                 self.reporter_sink.increase_indentation()

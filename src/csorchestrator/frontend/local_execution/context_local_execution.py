@@ -8,6 +8,7 @@ from csorchestrator.domain.context.context_os_architecture import ContextOsArchi
 from csorchestrator.domain.context.context_os_architecture_compiler_generator import (
     ContextOsArchitectureCompilerGenerator,
 )
+from csorchestrator.domain.orchestrator.orchestrator import OrchestratorDescription
 
 
 # base class for extra information that can be provided
@@ -21,6 +22,8 @@ ContextLocalExecutionExtraT = TypeVar("ContextLocalExecutionExtraT", bound=Conte
 # create it with create_local_context to ensure is a valid path pointint to an existing (eventually created) folder
 @dataclass(frozen=True)
 class ContextLocalExecution:
+    orchestrator_description: OrchestratorDescription
+    script_folder_path: Path
     base_folder_path: Path
     os_architecture: ContextOsArchitecture
     active_compiler_generator: ContextCompilerGenerator

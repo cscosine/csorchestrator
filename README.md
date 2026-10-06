@@ -1,31 +1,34 @@
-# csOrchestrator
+# csorchestrator
 
 ## 📦 Project Overview
 
-csOrchestrator is a centralized project manager
+csorchestrator is a centralized project manager
 
 ## 📁 Repository Structure
 
 ```
-csOrchestrator/
+csorchestrator/
 ├── src/csorchestrator/              # installable package (src-layout)
-│   ├── core/                        # generic building blocks (Report, Expected, etc.)
-│   ├── orchestrator/                # orchestrator engine, phases, steps, visitor base
-│   ├── visitors/                    # concrete visitor implementations (validator, executor)
-│   ├── step/                        # step type definitions (git clone, cmake, echo, etc.)
-│   ├── context/                     # execution context (local, GitHub Actions)
-│   ├── utils/                       # helpers (file-system, git operations)
-│   ├── cli.py                       # command-line entry point
+│   ├── application/                 # CLI, recipes and orchestrator factory
+│   ├── domain/                      # domain model: Orchestrator, phases, steps, contexts
+│   ├── foundation/                  # generic building blocks (Report, Expected, git/fs helpers)
+│   ├── frontend/                    # visitors & steps: validation, local execution, GitHub Actions
+│   ├── portable/                    # self-contained SDK (package_version, release_manifest)
+│   ├── _archive/                    # archived code kept for reference
 │   └── py.typed                     # PEP 561 type-annotation marker
 ├── tests/                           # pytest suites mirroring src/ (excluded from linting)
+├── tools/                           # maintenance helpers (e.g. .vscode/launch.json generator)
 ├── .github/workflows/ci.yml         # GitHub Actions CI pipeline
-├── conftest.py                      # pytest custom markers (slow, git) and CLI flags
-├── pyproject.toml                   # project metadata, deps, and tool config (ruff, mypy, pytest)
+├── conftest.py                      # pytest custom markers (slow, git, requires) and CLI flags
+├── pyproject.toml                   # project metadata, deps, and tool config (ruff, mypy, pytest, import-linter)
 ├── constraints-minimum.txt          # pinned minimum dependency versions for CI
 ├── .pre-commit-config.yaml          # pre-commit hooks (ruff, mypy, unstaged-changes check)
+├── .vscode/                         # debug configurations and tasks (launch.json is auto-generated)
 ├── .gitignore                       # git ignore patterns
 ├── .gitattributes                   # line-ending normalization
 ├── LICENSE                          # MIT license
+├── setup.sh / setup.ps1             # one-time dev environment setup scripts
+├── open-code.sh / open-code.ps1     # open VS Code with the virtual env activated
 └── README.md                        # this file
 ```
 
@@ -62,8 +65,8 @@ to also keep the terminal with `venv` activated available
 
 ```bash
 # 1. Clone repository
-git clone git@github.com:cscosine/csOrchestrator.git
-cd csOrchestrator
+git clone git@github.com:cscosine/csorchestrator.git
+cd csorchestrator
 
 # 2. Create virtual environment
 python3.XX -m venv .venv # 3.XX >= 3.11
@@ -94,13 +97,13 @@ If you prefer step-by-step instructions:
 #### Clone Repository
 
 ``` bash
-git clone git@github.com:cscosine/csOrchestrator.git
+git clone git@github.com:cscosine/csorchestrator.git
 ```
 
 or
 
 ``` bash
-git clone https://github.com/cscosine/csOrchestrator.git
+git clone https://github.com/cscosine/csorchestrator.git
 ```
 
 ---
@@ -250,21 +253,36 @@ If any check fails, the commit is blocked until the issues are resolved.
 
 ## 🧩 Reusable Module & Testing
 
-The csOrchestrator logic is a installable package in `src/csorchestrator/`. This design allows the library to be used independently-either within this repo or published on PyPI.
+The csorchestrator logic is a installable package in `src/csorchestrator/`. This design allows the library to be used independently-either within this repo or published on PyPI.
 
 ### Package structure (src-layout)
 
 ```
 src/csorchestrator/
-├── core/                        # generic types: Report, Expected[T,E], OptionalResultWithReport[T]
-├── orchestrator/                # engine: Orchestrator, Phase, StepBase, execute_orchestrator, visitor base
-├── visitors/                    # concrete visitors: validator, local executor
-├── step/                        # step definitions: get_repository, cmake, custom_command, echo, etc.
-├── context/                     # execution contexts: local filesystem, GitHub Actions
-├── utils/
+├── application/                 # user-facing layer: CLI, recipes, factory
+│   ├── cli/                     # click-based CLI (`csorchestrator` console script)
+│   ├── factory/                 # orchestrator factory helpers
+│   └── recipes/                 # high-level recipes: create_default_orchestrator(),
+│                                #   checkout_build_and_archive_repos(), download_manifest(), ...
+├── domain/                      # pure domain model
+│   ├── context/                 # OS / architecture / compiler contexts and execution matrix
+│   ├── execution/               # execution state
+│   └── orchestrator/            # engine: Orchestrator, Phase, StepBase, visitor & reporter bases, WorkflowConfig
+├── foundation/                  # generic building blocks with no domain dependency
+│   ├── core/                    # Report, Expected[T,E], OptionalResultWithReport[T]
 │   ├── file_system/             # path validation, directory creation
-│   └── git/                     # clone/checkout, repo sync helpers
-├── cli.py                       # CLI entry point (registered as console_script)
+│   └── git/                     # resolve_url, clone/checkout, validate & sync helpers
+├── frontend/                    # how an Orchestrator is validated, executed and translated
+│   ├── cscmake_presets/         # supported OS/arch/compiler variants for CMake projects
+│   ├── github_workflow_translation/  # GitHub Actions workflow YAML generation
+│   ├── local_execution/         # local execution context & executor visitor
+│   ├── reporters/               # reporter sinks (print, colored, colorama, markdown, composite, dummy)
+│   ├── step/                    # step definitions (clone, cmake, custom command, archives, artifacts, ...)
+│   └── validation/              # validation visitor and validated orchestrator
+├── portable/                    # self-contained SDK copied into client projects
+│                                #   (package_version, release_manifest)
+├── _archive/                    # archived code kept for reference
+├── __init__.py
 └── py.typed                     # PEP 561 marker for downstream type checkers
 ```
 
@@ -276,16 +294,85 @@ src/csorchestrator/
 
 After installation (`pip install -e .`), you can:
 
-1. **Use as a library:**
+1. **Use as a library:** write a *project script* that builds an `Orchestrator`. The script must
+   expose a `create_orchestrator() -> OptionalResultWithReport[Orchestrator]` function; recipes from
+   `application.recipes` and steps from `frontend.step` compose the phases:
 
     ```python
-    TODO
+    #!/usr/bin/env python3
+    import sys
+    from collections.abc import Sequence
+    from pathlib import Path
+
+    from csorchestrator.application.cli.cli import orchestrator_main_with_default_run
+    from csorchestrator.application.factory.factory import OptionalOrchestratorWithReport
+    from csorchestrator.application.recipes.checkout_build import checkout_build_and_archive_repos
+    from csorchestrator.application.recipes.create_orchestrator import create_default_orchestrator
+    from csorchestrator.foundation.core.report import Report
+    from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
+
+
+    def create_orchestrator() -> OptionalOrchestratorWithReport:
+        report = Report()
+
+        base_target_dir = Path("workspace")
+        base_install_dir = base_target_dir / Path("install")
+
+        # repo name -> (git ref, build config)
+        repos: dict[str, tuple[str, BuildConfig | None]] = {
+            "fmt": ("dev", BuildConfig.DEBUG_RELEASE),
+            "Catch2": ("dev", BuildConfig.DEBUG_RELEASE),
+        }
+
+        o = create_default_orchestrator(
+            name="my-project",
+            version="0.1.0",
+            base_install_dir=base_install_dir,
+        )
+
+        checkout_build_and_archive_repos(
+            o,
+            base_target_dir=base_target_dir,
+            base_install_dir=base_install_dir,
+            repo_ref_build_type_list=repos,
+        )
+
+        return OptionalOrchestratorWithReport.createResultAndReport(o, report)
+
+
+    def main(argv: Sequence[str] | None = None) -> int:
+        script_path = str(Path(__file__).resolve())
+        return orchestrator_main_with_default_run(script_path, argv)
+
+
+    if __name__ == "__main__":
+        sys.exit(main())
     ```
 
-2. **Use the CLI:**
+    See the `3rdPartyBaseLibs` / `csQt6` repositories for full production examples.
+
+2. **Use the CLI:** the project script is an executable entry point:
 
     ```bash
-    TODO
+    # validate + execute the orchestrator locally (default command)
+    python my_project.py
+    # or explicitly, with a base folder for the build:
+    csorchestrator run my_project.py --target-folder /tmp/build
+
+    # print the orchestrator description (name/version, phases, steps, execution matrix)
+    # without executing anything:
+    python my_project.py describe
+    # or via the console script:
+    csorchestrator describe my_project.py
+
+    # generate a GitHub Actions workflow YAML from the orchestrator
+    python my_project.py generate-github-workflow -o .github/workflows/ci.yml
+    # or via the console script:
+    csorchestrator generate-github-workflow my_project.py -o .github/workflows/ci.yml
+
+    # reporting options (apply to run/describe/generate-github-workflow):
+    #   --sink {print,colored,colorama,none}   select the console reporter
+    #   --markdown PATH                        also write an execution report as markdown
     ```
 
 ---
@@ -332,7 +419,7 @@ check the `.github\workflows\ci.yml` file for details
 
 ### Dependencies
 
-- **Runtime:** `GitPython`
-- **Development:** `pytest`, `mypy`, `ruff`, `pre-commit`
+- **Runtime:** `click` (CLI), `PyYAML`, `GitPython`, `colorama`
+- **Development:** `pytest`, `mypy`, `ruff`, `pre-commit`, `import-linter`
 
 Install all with: `pip install -e .[dev]`

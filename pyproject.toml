@@ -14,6 +14,7 @@ license = { text = "MIT" }
 requires-python = ">=3.11"
 dependencies = [
     "GitPython>=3.1",
+    "PyYAML>=6.0",
     "click>=8.1",
     "colorama>=0.4.6",
 ]
@@ -32,7 +33,8 @@ dev = [
     "mypy>=1.0",
     "ruff>=0.4",
     "pre-commit>=4",
-    "import-linter[ui]>=2.0"
+    "import-linter[ui]>=2.0",
+    "types-PyYAML",
 ]
 
 # ===============================
@@ -54,13 +56,19 @@ target-version = "py311"
 # B  -> Bugbear (common bug patterns)
 # UP -> modern Python suggestions
 # SIM -> catches simplifications
+# N  -> PEP8 naming conventions
+# C4 -> flake8-comprehensions (more Pythonic comprehensions)
+# W  -> Pycodestyle warnings
 select = [
     "E",
     "F",
     "I",
     "B",
     "UP",
-    "SIM"
+    "SIM",
+    "N",
+    "C4",
+    "W",
 ]
 
 [tool.ruff.format]
@@ -154,6 +162,7 @@ layers = [
     "frontend",
     "domain",
     "foundation",
+    "portable",
 ]
 containers = [
     "csorchestrator"
@@ -192,12 +201,11 @@ name = "frontend layers"
 type = "layers"
 
 layers = [
-    "recipes",
-    "release_manifest",
     "step",
+    "cscmake_presets",
     "github_workflow_translation : local_execution",
     "validation",
-    "reporters | cscmake_presets"
+    "reporters"
 ]
 containers = [
     "csorchestrator.frontend"
@@ -209,7 +217,9 @@ name = "application layers"
 type = "layers"
 
 layers = [
-    "cli | factory"
+    "cli",
+    "recipes",
+    "factory"
 ]
 containers = [
     "csorchestrator.application"
