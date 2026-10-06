@@ -101,6 +101,10 @@ def create_steps_to_get_libs_from_manifest(
             )
             continue
 
+        headers_only = False
+        if lib_name in manifest_loaded.headers_only_packages:
+            headers_only = True
+
         steps.append(
             StepGetPrecompiledLibGithub(
                 name=f"Get Precompiled Lib {lib_name}",
@@ -114,6 +118,7 @@ def create_steps_to_get_libs_from_manifest(
                 lib_name=lib_name,
                 lib_version=versions[0],
                 base_libs_dir=base_libs_dir,
+                headers_only=headers_only,
                 mapping_function=mapping_function,
             )
         )

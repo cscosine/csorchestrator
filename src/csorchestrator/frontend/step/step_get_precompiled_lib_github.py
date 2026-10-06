@@ -12,6 +12,7 @@ from urllib.parse import urljoin
 from csorchestrator.domain.context.context_os_architecture_compiler_generator import (
     ContextOsArchitectureCompilerGenerator,
     create_context_os_architecture_compiler_generator_string,
+    create_header_only_variant_string,
 )
 from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
 from csorchestrator.domain.orchestrator.reporter_sink_base import ReporterSinkBase
@@ -26,6 +27,7 @@ from csorchestrator.frontend.github_workflow_translation.github_step_interface i
 from csorchestrator.frontend.github_workflow_translation.github_workflow_matrix_constants import (
     MatrixOsArchCompilerGeneratorGithubConstants,
     create_context_os_architecture_compiler_generator_string_github_matrix,
+    create_header_only_variant_string_github_matrix,
 )
 from csorchestrator.frontend.github_workflow_translation.github_workflow_steps_translations import (
     StepGitHubAction,
@@ -85,6 +87,7 @@ class StepGetPrecompiledLibGithub(StepBase):
     lib_name: str
     lib_version: str
     base_libs_dir: Path
+    headers_only: bool
     mapping_function: MappingFunction | None = None
 
     def __post_init__(self) -> None:
@@ -126,21 +129,33 @@ def execute_step_get_precompiled_lib(
 ) -> Report:
     report = Report()
 
-    libs_subdir = create_context_os_architecture_compiler_generator_string(
+    input_context_string = create_context_os_architecture_compiler_generator_string(
         context.get_active_os_architecture_compiler_generator()
     )
 
     if step.mapping_function is None:
-        release_name_part = libs_subdir
+        if step.headers_only:
+            source_lib_variant = create_header_only_variant_string(
+                context.get_active_os_architecture_compiler_generator().context_os_architecture.os
+            )
+            release_name_part = source_lib_variant
+        else:
+            release_name_part = input_context_string
     else:
+        # first apply mapping functiont --> eg. map linux-clang to linux-gcc
         source_context = step.mapping_function(deepcopy(context.get_active_os_architecture_compiler_generator()))
         if source_context is None:
-            report.append_error(f"mapping function returned None for input context {libs_subdir}")
+            report.append_error(f"mapping function returned None for input context {input_context_string}")
             return report
 
-        release_name_part = create_context_os_architecture_compiler_generator_string(source_context)
+        # then apply header only on the resulting context
+        if step.headers_only:
+            source_lib_variant = create_header_only_variant_string(source_context.context_os_architecture.os)
+            release_name_part = source_lib_variant
+        else:
+            release_name_part = create_context_os_architecture_compiler_generator_string(source_context)
 
-    libs_subdir_path: Path = context.base_folder_path / step.base_libs_dir / libs_subdir
+    libs_subdir_path: Path = context.base_folder_path / step.base_libs_dir / input_context_string
 
     dir_creation_res = ensure_directory_exists_or_create_and_is_usable(libs_subdir_path.resolve())
 
@@ -229,11 +244,16 @@ def step_get_precompiled_lib_to_githubwf(
 ) -> OptionalListGithubStepsWithReport:
 
     release_name_part = create_context_os_architecture_compiler_generator_string_github_matrix()
-    libs_subdir = step.base_libs_dir / release_name_part
+    input_context_string = step.base_libs_dir / release_name_part
 
     steps: list[GithubStepInterface] = []
 
     if step.mapping_function is None:
+        if step.headers_only:
+            source_lib_variant = create_header_only_variant_string_github_matrix()
+            release_name_part = source_lib_variant
+        # else: release_name_part is ok!
+
         src_filename = create_archive_filename(
             project_name_and_version=Orchestrator.compose_name_version_to_string(
                 step.project_name, step.project_version
@@ -251,12 +271,12 @@ def step_get_precompiled_lib_to_githubwf(
                     "repository": f"{step.org}/{step.git_repo}",
                     "tag": f"{step.project_tag}",
                     "fileName": f"{src_filename}",
-                    "out-file-path": f"{libs_subdir.as_posix()}",
+                    "out-file-path": f"{input_context_string.as_posix()}",
                 },
             )
         )
 
-        tarfile_path = libs_subdir / f"{src_filename}"
+        tarfile_path = input_context_string / f"{src_filename}"
 
     else:
         # mapping needs two steps, one to prepare a dict of valid entries corresponding to execution matrix id,
@@ -265,15 +285,31 @@ def step_get_precompiled_lib_to_githubwf(
         filename_variable = f"{step_id}"
 
         filenames_dict_lines: list[str] = []
-        for matrix_id, matrix in enumerate(wf_job.matrix_includes):
-            new_context = step.mapping_function(deepcopy(matrix.original_os_architecture_compiler_generator_list))
-            if new_context is None:
-                return OptionalListGithubStepsWithReport.create_report(
-                    Report().append_error(f"error evaluating mapping function for {step.name} in github translation")
-                )
-            filenames_dict_lines += [
-                f'    {matrix_id}: "{create_context_os_architecture_compiler_generator_string(new_context)}",',
-            ]
+        if step.headers_only:
+            # if headers only, first apply mapping, then headers only resolution
+            for matrix_id, matrix in enumerate(wf_job.matrix_includes):
+                new_context = step.mapping_function(deepcopy(matrix.original_os_architecture_compiler_generator_list))
+                if new_context is None:
+                    return OptionalListGithubStepsWithReport.create_report(
+                        Report().append_error(
+                            f"error evaluating mapping function for {step.name} in github translation"
+                        )
+                    )
+                filenames_dict_lines += [
+                    f'    {matrix_id}: "{create_header_only_variant_string(new_context.context_os_architecture.os)}",',
+                ]
+        else:
+            for matrix_id, matrix in enumerate(wf_job.matrix_includes):
+                new_context = step.mapping_function(deepcopy(matrix.original_os_architecture_compiler_generator_list))
+                if new_context is None:
+                    return OptionalListGithubStepsWithReport.create_report(
+                        Report().append_error(
+                            f"error evaluating mapping function for {step.name} in github translation"
+                        )
+                    )
+                filenames_dict_lines += [
+                    f'    {matrix_id}: "{create_context_os_architecture_compiler_generator_string(new_context)}",',
+                ]
 
         run_list = [
             "import os",
@@ -320,12 +356,12 @@ def step_get_precompiled_lib_to_githubwf(
                     "repository": f"{step.org}/{step.git_repo}",
                     "tag": f"{step.project_tag}",
                     "fileName": f"${{{{ steps.{step_id}.outputs.{filename_variable} }}}}",
-                    "out-file-path": f"{libs_subdir.as_posix()}",
+                    "out-file-path": f"{input_context_string.as_posix()}",
                 },
             )
         )
 
-        tarfile_path = libs_subdir / f"${{{{ steps.{step_id}.outputs.{filename_variable} }}}}"
+        tarfile_path = input_context_string / f"${{{{ steps.{step_id}.outputs.{filename_variable} }}}}"
 
     # finally, one step to extract the archive
 
@@ -334,7 +370,7 @@ def step_get_precompiled_lib_to_githubwf(
             name=step.name + " extract tar.gz",
             shell_type="bash",
             run=[
-                f"tar -xzf {tarfile_path.as_posix()} -C {libs_subdir.as_posix()}",
+                f"tar -xzf {tarfile_path.as_posix()} -C {input_context_string.as_posix()}",
                 f"rm -f {tarfile_path.as_posix()}",
             ],
         )

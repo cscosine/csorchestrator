@@ -318,7 +318,7 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
         package for package, config in repo_publish_config_dict.items() if config == PublishPackageMode.ON_VARIANT
     }
     headers_only_packages: set[str] = {
-        package for package, config in repo_publish_config_dict.items() if config == PublishPackageMode.ON_VARIANT
+        package for package, config in repo_publish_config_dict.items() if config == PublishPackageMode.HEADERS_ONLY
     }
 
     project_name_and_version = ManifestVersionsEntry.compose_name_version_to_string(project_name, project_version)

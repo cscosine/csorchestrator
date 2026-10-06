@@ -201,9 +201,7 @@
       "args": [
         "commit",
         "-a",
-        "--amend",
-        "-m",
-        "${input:commitMessage}"
+        "--amend"
       ],
       "problemMatcher": [],
       "detail": "#Git # Commit amend"

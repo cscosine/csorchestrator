@@ -1,5 +1,6 @@
 from csorchestrator.domain.context.context_os_architecture_compiler_generator import (
     create_context_os_architecture_compiler_generator_string_from_components,
+    create_header_only_variant_string_from_components,
 )
 
 
@@ -24,6 +25,12 @@ class MatrixOsArchCompilerGeneratorGithubConstants:
     C_COMPILER_EMBRACED: str = "${{ matrix.c_compiler }}"
     CPP_COMPILER_EMBRACED: str = "${{ matrix.cpp_compiler }}"
     TOOLSET_EMBRACED: str = "${{ matrix.toolset }}"
+
+
+def create_header_only_variant_string_github_matrix() -> str:
+    return create_header_only_variant_string_from_components(
+        MatrixOsArchCompilerGeneratorGithubConstants.MATRIX_OS_NAME_EMBRACED
+    )
 
 
 def create_context_os_architecture_compiler_generator_string_github_matrix() -> str:

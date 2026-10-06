@@ -68,7 +68,11 @@ def create_context_os_architecture_compiler_generator_string(
 
 
 def create_header_only_variant_string(os: OS) -> str:
+    return create_header_only_variant_string_from_components(os.value.lower())
+
+
+def create_header_only_variant_string_from_components(os: str) -> str:
     parts: list[str] = []
     parts.append(CSORCHESTRATOR_SCHEMA_VERSION.lower())
-    parts.append(os.value.lower())
+    parts.append(os)
     return "-".join(parts)
