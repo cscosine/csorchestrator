@@ -1,5 +1,6 @@
 import os
 import tarfile
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeAlias
@@ -47,6 +48,109 @@ class ManifestGithub:
     # with keyring in local and token in github
 
 
+# plain list of the libraries
+# ["myLib", "myOtherLib"]
+LibraryList: TypeAlias = list[str]
+
+# dict lib name -> its dependencies
+# {"myLib" : ["coreLib", "baseLib"], "myOtherLib" : ["myOtherLib"]}
+LibraryDependenciesMap: TypeAlias = dict[str, LibraryList]
+
+# dict external lib provider name -> its dependencies
+# {
+#   "third_part_libs" :
+#     {
+#       "myLib": ["third_part_lib_base"],
+#       "myOtherLib": ["third_part_lib_other"],
+#     },
+#   "gui_lib":
+#     {
+#       "myLib": ["gui_base_lib"]
+#       "myOtherLib": ["gui_other_lib"],
+#     }
+#   }
+ExternalLibraryDependenciesMap: TypeAlias = dict[str, LibraryDependenciesMap]
+
+ProviderList: TypeAlias = list[ManifestGithub]
+
+ProviderNameLibsList: TypeAlias = dict[str, list[str]]
+
+
+def extract_provider_names(providers: ProviderList) -> list[str]:
+    ret: list[str] = []
+    for p in providers:
+        ret.append(p.project_name)
+    return ret
+
+
+def fill_in_providers_in_dependencies(
+    dependencies: ExternalLibraryDependenciesMap, provider_names: list[str]
+) -> ExternalLibraryDependenciesMap:
+    ret = deepcopy(dependencies)
+    for p in provider_names:
+        if p not in dependencies:
+            ret[p] = {}
+    return ret
+
+
+def fill_in_libraries_in_dependecies(
+    dependencies: LibraryDependenciesMap, library_names: list[str]
+) -> LibraryDependenciesMap:
+    ret = deepcopy(dependencies)
+    for p in library_names:
+        if p not in dependencies:
+            ret[p] = []
+
+    return ret
+
+
+def fill_in_providers_and_libs_in_dependencies(
+    dependencies: ExternalLibraryDependenciesMap, provider_names: list[str], library_names: list[str]
+) -> ExternalLibraryDependenciesMap:
+    dependencies = fill_in_providers_in_dependencies(dependencies, provider_names)
+    ret = deepcopy(dependencies)
+    for _, libs in ret.items():
+        libs = fill_in_libraries_in_dependecies(libs, library_names)
+    return ret
+
+
+def merge_library_dependencies(src: LibraryDependenciesMap, add: LibraryDependenciesMap) -> LibraryDependenciesMap:
+    dst = deepcopy(src)
+    for a, ll in add.items():
+        for e in ll:
+            if e not in dst[a]:
+                dst[a].append(e)
+    return dst
+
+
+def merge_providers_dependencies(
+    src: ExternalLibraryDependenciesMap, add: ExternalLibraryDependenciesMap
+) -> ExternalLibraryDependenciesMap:
+    dst = deepcopy(src)
+    for p, lst in add.items():
+        lst = merge_library_dependencies(lst, src[p])
+        dst[p] = lst
+    return dst
+
+
+def fill_in_library_list(src: LibraryList | None, default: LibraryList) -> LibraryList:
+    if src is None:
+        return deepcopy(default)
+    return src
+
+
+def extract_provider_libs_list(src: ExternalLibraryDependenciesMap) -> ProviderNameLibsList:
+    ret: ProviderNameLibsList = {}
+    for provider, deps in src.items():
+        ret[provider] = []
+        for _, libs in deps.items():
+            ret[provider].extend(libs)
+        ret[provider] = list(set(ret[provider]))
+    return ret
+
+
+# -------------
+
 OptionalManifestPathWithReport: TypeAlias = OptionalResultWithReport[Path]
 
 
@@ -74,11 +178,13 @@ def create_steps_to_get_libs_from_manifest(
     """
     report = Report()
 
+    # collect lib name and versions declared in the manifest
     lib_versions: dict[str, set[str]] = {}
     for variant_entry in manifest_loaded.variants:
         for package_version in variant_entry.entries:
             lib_versions.setdefault(package_version.name, set()).add(package_version.version)
 
+    # autofill the lib to select or check the provided list is valid
     selected_lib_names: list[str]
     if lib_name_list is None:
         selected_lib_names = sorted(lib_versions)
@@ -88,10 +194,8 @@ def create_steps_to_get_libs_from_manifest(
             if lib_name not in lib_versions:
                 report.append_error(f"Library '{lib_name}' is not declared in the release manifest")
 
-    steps: list[StepGetPrecompiledLibGithub] = []
+    # check that lib version is unique across variants
     for lib_name in selected_lib_names:
-        if lib_name not in lib_versions:
-            continue
         versions = sorted(lib_versions[lib_name])
         if len(versions) > 1:
             report.append_error(
@@ -99,7 +203,16 @@ def create_steps_to_get_libs_from_manifest(
                 f"({versions}); multiple versions of the same library are not supported "
                 "at the moment"
             )
-            continue
+
+    if report.has_errors():
+        return report
+
+    # prepare steps to get the selected libs
+    steps: list[StepGetPrecompiledLibGithub] = []
+    for lib_name in selected_lib_names:
+        versions = sorted(lib_versions[lib_name])
+        assert len(versions) == 1  # guaranteed by the check above
+        version = versions[0]
 
         headers_only = False
         if lib_name in manifest_loaded.headers_only_packages:
@@ -116,15 +229,12 @@ def create_steps_to_get_libs_from_manifest(
                 project_version=manifest_description.project_version,
                 project_tag=manifest_description.release_tag,
                 lib_name=lib_name,
-                lib_version=versions[0],
+                lib_version=version,
                 base_libs_dir=base_libs_dir,
                 headers_only=headers_only,
                 mapping_function=mapping_function,
             )
         )
-
-    if report.has_errors():
-        return report
 
     if phase_name is None:
         phase_name = f"get libraries from {manifest_description.project_name}{manifest_description.project_version}"

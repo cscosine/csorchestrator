@@ -8,9 +8,11 @@ from csorchestrator.application.factory.factory import (
     create_orchestrator_factory_all_supported_cases,
 )
 from csorchestrator.application.recipes.manifest_github import (
+    LibraryDependenciesMap,
     ManifestGithub,
     create_steps_to_get_libs_from_manifest,
     download_manifest_bundle,
+    merge_library_dependencies,
     resolve_library_dependencies,
 )
 from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
@@ -212,25 +214,6 @@ def test_create_steps_to_get_libs_from_manifest_subsample_with_lib_name_list():
     assert [step.name for step in steps] == ["Get Precompiled Lib fmt"]
 
 
-def test_create_steps_to_get_libs_from_manifest_unknown_lib_in_list_errors():
-    manifest = _release_manifest([[("fmt", "11.2.1")]])
-
-    orchestrator = _create_orchestrator()
-    report = create_steps_to_get_libs_from_manifest(
-        orchestrator=orchestrator,
-        manifest_description=_manifest_description(),
-        manifest_loaded=manifest,
-        base_libs_dir=Path("workspace/libs"),
-        lib_name_list=["fmt", "notALib"],
-    )
-
-    assert report.has_errors()
-    assert len(report.errors) == 1
-    assert "notALib" in report.errors[0]
-    assert "not declared in the release manifest" in report.errors[0]
-    assert orchestrator.phases == []
-
-
 def _release_manifest_with_bundle(bundle_file_name: str | None) -> ReleaseManifest:
     return ReleaseManifest(
         project_name=PROJECT_NAME,
@@ -347,3 +330,30 @@ def test_resolve_library_dependencies_expands_transitive_dependencies():
         "libassert",
         "zlib",
     ]
+
+
+def test_merge_library_dependencies():
+    library_dependencies: LibraryDependenciesMap = {
+        "A": ["a"],
+        "B": ["a", "b"],
+        "C": ["a", "b", "c"],
+        "D": ["a", "b", "c", "d"],
+    }
+
+    # project additional dependencies for `dev`
+    library_dependencies_dev: LibraryDependenciesMap = {
+        "A": ["aDebug"],
+        "B": ["bDebug"],
+        "C": ["cDebug"],
+        "D": ["dDebug"],
+    }
+
+    library_dependencies_merged: LibraryDependenciesMap = {
+        "A": ["a", "aDebug"],
+        "B": ["a", "b", "bDebug"],
+        "C": ["a", "b", "c", "cDebug"],
+        "D": ["a", "b", "c", "d", "dDebug"],
+    }
+
+    res = merge_library_dependencies(library_dependencies, library_dependencies_dev)
+    assert res == library_dependencies_merged

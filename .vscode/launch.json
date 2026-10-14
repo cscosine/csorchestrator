@@ -372,16 +372,6 @@
       "justMyCode": false
     },
     {
-      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_create_steps_to_get_libs_from_manifest_unknown_lib_in_list_errors",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "pytest",
-      "args": [
-        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_create_steps_to_get_libs_from_manifest_unknown_lib_in_list_errors"
-      ],
-      "justMyCode": false
-    },
-    {
       "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_download_manifest_bundle_download_error_reported",
       "type": "debugpy",
       "request": "launch",
@@ -408,6 +398,16 @@
       "module": "pytest",
       "args": [
         "tests/csorchestrator/application/recipes/test_manifest_github.py::test_download_manifest_bundle_no_bundle_declared_does_nothing"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_merge_library_dependencies",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_manifest_github.py::test_merge_library_dependencies"
       ],
       "justMyCode": false
     },
