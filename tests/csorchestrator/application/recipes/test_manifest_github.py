@@ -307,16 +307,6 @@ def test_download_manifest_bundle_download_error_reported(tmp_path, monkeypatch)
     assert extract_folder.exists()
 
 
-def test_resolve_library_dependencies_none_list_returns_none():
-    mapping: dict[str, list[str]] = {"a": ["b"]}
-
-    assert resolve_library_dependencies(None, mapping) is None
-
-
-def test_resolve_library_dependencies_no_mapping_returns_list_unchanged():
-    assert resolve_library_dependencies(["b", "a"], None) == ["b", "a"]
-
-
 def test_resolve_library_dependencies_lib_without_declared_dependencies():
     mapping = {"fmt-eigen": ["eigen3", "fmt"]}
 

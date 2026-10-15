@@ -108,7 +108,9 @@ def fill_in_libraries_in_dependecies(
 
 
 def fill_in_providers_and_libs_in_dependencies(
-    dependencies: ExternalLibraryDependenciesMap, provider_names: list[str], library_names: list[str]
+    dependencies: ExternalLibraryDependenciesMap,
+    provider_names: list[str],
+    library_names: list[str],
 ) -> ExternalLibraryDependenciesMap:
     dependencies = fill_in_providers_in_dependencies(dependencies, provider_names)
     ret = deepcopy(dependencies)
@@ -142,7 +144,9 @@ def fill_in_library_list(src: LibraryList | None, default: LibraryList) -> Libra
     return src
 
 
-def extract_provider_libs_list(src: ExternalLibraryDependenciesMap) -> ProviderNameLibsList:
+def extract_provider_libs_list(
+    src: ExternalLibraryDependenciesMap,
+) -> ProviderNameLibsList:
     ret: ProviderNameLibsList = {}
     for provider, deps in src.items():
         ret[provider] = []
@@ -165,6 +169,7 @@ def create_steps_to_get_libs_from_manifest(
     mapping_function: MappingFunction | None,
     phase_name: str | None = None,
     lib_name_list: list[str] | None = None,
+    dev: bool = False,
 ) -> Report:
     """
     Add a phase with one StepGetPrecompiledLibGithub per selected library declared in the release manifest.
@@ -196,6 +201,19 @@ def create_steps_to_get_libs_from_manifest(
         for lib_name in selected_lib_names:
             if lib_name not in lib_versions:
                 report.append_error(f"Library '{lib_name}' is not declared in the release manifest")
+
+    # the library self dependencies
+    dependencies_list: dict[str, list[str]] = {name: list(deps) for name, deps in manifest_loaded.dependencies.items()}
+    dependencies_dev: dict[str, list[str]] = {
+        name: list(deps) for name, deps in manifest_loaded.dependencies_dev.items()
+    }
+
+    if dev:
+        # extend them if we are in dev mode
+        dependencies_list = merge_library_dependencies(dependencies_list, dependencies_dev)
+
+    # get transitive dependencies
+    selected_lib_names = resolve_library_dependencies(selected_lib_names, dependencies_list)
 
     # check that lib version is unique across variants
     for lib_name in selected_lib_names:
@@ -382,23 +400,9 @@ def download_manifest(manifest_description: ManifestGithub, output_folder: Path)
 
 
 def resolve_library_dependencies(
-    lib_name_list: list[str] | None,
-    library_dependencies: dict[str, list[str]] | None = None,
-) -> list[str] | None:
-    """
-    Expand a library list with their (transitive) dependencies.
-
-    ``library_dependencies`` maps a library name to the list of libraries it depends on.
-    The expansion is applied repeatedly until the set of libraries is stable, so
-    requesting ``["fmt-eigen"]`` with the mapping ``{"fmt-eigen": ["eigen3", "fmt"]}``
-    yields ``["eigen3", "fmt", "fmt-eigen"]``.
-
-    If ``lib_name_list`` is None (all libraries selected) or ``library_dependencies``
-    is None (no auto-fill requested), the list is returned unchanged.
-    """
-    if lib_name_list is None or not library_dependencies:
-        return lib_name_list
-
+    lib_name_list: list[str],
+    library_dependencies: dict[str, list[str]],
+) -> list[str]:
     resolved: set[str] = set(lib_name_list)
     changed = True
     while changed:
@@ -410,72 +414,6 @@ def resolve_library_dependencies(
                     changed = True
 
     return sorted(resolved)
-
-
-def download_csorchestrator_managed_libraries(
-    orchestrator: Orchestrator,
-    base_url: str,
-    org: str,
-    git_repo: str,
-    project_name: str,
-    project_version: str,
-    release_tag: str,
-    base_libs_dir: Path,
-    mapping_function: MappingFunction | None,
-    manifest_dest_folder: Path | None = None,
-    bundle_dest_folder: Path | None = None,
-    lib_name_list: list[str] | None = None,
-    library_dependencies: dict[str, list[str]] | None = None,
-) -> Report:
-    if lib_name_list is not None:
-        lib_name_list = resolve_library_dependencies(lib_name_list, library_dependencies)
-
-    if manifest_dest_folder is None:
-        manifest_dest_folder = Path("libs") / Path("manifests")
-
-    if bundle_dest_folder is None:
-        bundle_dest_folder = Path("libs")
-
-    report = Report()
-
-    manifest_description = ManifestGithub(
-        base_url=base_url,
-        org=org,
-        git_repo=git_repo,
-        project_name=project_name,
-        project_version=project_version,
-        release_tag=release_tag,
-    )
-
-    manifest_path_with_report = download_manifest(
-        manifest_description,
-        manifest_dest_folder,
-    )
-    report.append_report(manifest_path_with_report.report)
-
-    if manifest_path_with_report.result is not None:
-        manifest_loaded = ReleaseManifest.load_release_manifest(manifest_path_with_report.result)
-
-        report.append_report(
-            download_manifest_bundle(
-                manifest_description,
-                manifest_loaded,
-                bundle_dest_folder,
-            )
-        )
-
-        report.append_report(
-            create_steps_to_get_libs_from_manifest(
-                orchestrator=orchestrator,
-                manifest_description=manifest_description,
-                manifest_loaded=manifest_loaded,
-                base_libs_dir=base_libs_dir,
-                lib_name_list=lib_name_list,
-                mapping_function=mapping_function,
-            )
-        )
-
-    return report
 
 
 def install_ubuntu_apt_packages(
