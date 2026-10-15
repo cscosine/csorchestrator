@@ -75,6 +75,15 @@ class ReleaseManifest:
     CSORCHESTRATOR_MANIFEST_EXTENSION: ClassVar[str] = ".csOrchestratorManifest"
     CSORCHESTRATOR_MANIFEST_ROOT: ClassVar[str] = "csorchestrator_manifest"
 
+    @classmethod
+    def create_manifest_filename_from_project_name_and_version_string(cls, project_name_version: str) -> str:
+        return project_name_version + ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION
+
+    def create_manifest_filename(self) -> str:
+        return ReleaseManifest.create_manifest_filename_from_project_name_and_version_string(
+            ManifestVersionsEntry.compose_name_version_to_string(self.project_name, self.project_version)
+        )
+
     def to_dict(self) -> dict[str, Any]:
         return {
             ReleaseManifest.CSORCHESTRATOR_MANIFEST_ROOT: {

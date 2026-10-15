@@ -99,7 +99,11 @@ class ReleaseCreationOnTagConfig(ReleaseCreationOnTagConfigBase):
     output_folder_for_generated_files: Path = Path("generated-for-release")
 
     def get_output_manifest_filename(self, project_name_and_version_string: str) -> Path:
-        return Path(f"{project_name_and_version_string}{ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION}")
+        return Path(
+            ReleaseManifest.create_manifest_filename_from_project_name_and_version_string(
+                project_name_and_version_string
+            )
+        )
 
     def has_additional_files_for_bundle(self) -> bool:
         return len(self.additional_files_list) > 0

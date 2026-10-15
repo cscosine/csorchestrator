@@ -44,6 +44,9 @@ class ManifestGithub:
 
     GITHUB_BASE_URL_HTTPS: str = StepGetRepositoryGitHub.GITHUB_BASE_URL_HTTPS
 
+    def create_manifest_filename(self) -> str:
+        return create_manifest_filename(self.project_name, self.project_version)
+
     # TODO for private repo, will need to use API url and a api request to download, using a token,
     # with keyring in local and token in github
 
@@ -246,6 +249,12 @@ def create_steps_to_get_libs_from_manifest(
     return report
 
 
+def create_manifest_filename(project_name: str, project_version: str) -> str:
+    return ReleaseManifest.create_manifest_filename_from_project_name_and_version_string(
+        Orchestrator.compose_name_version_to_string(project_name, project_version)
+    )
+
+
 def download_manifest_bundle(
     manifest_description: ManifestGithub,
     release_manifest: ReleaseManifest,
@@ -337,12 +346,7 @@ def download_manifest(manifest_description: ManifestGithub, output_folder: Path)
     assert dir_creation_res.value is not None
     target_dir = dir_creation_res.value
 
-    source_filename = Path(
-        Orchestrator.compose_name_version_to_string(
-            manifest_description.project_name, manifest_description.project_version
-        )
-        + ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION,
-    )
+    source_filename = Path(manifest_description.create_manifest_filename())
     target_filename = target_dir / source_filename
 
     download_url = create_github_release_download_url(
