@@ -14,8 +14,9 @@ if ($LASTEXITCODE -ne 0) {
 
 .\.venv\Scripts\Activate.ps1
 
-python -m pip install --upgrade pip
-pip install -e ".[dev]"
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install -e ".[dev]"
+
 
 pre-commit install
 
