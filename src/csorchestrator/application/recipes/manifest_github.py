@@ -162,9 +162,9 @@ def create_steps_to_get_libs_from_manifest(
     manifest_description: ManifestGithub,
     manifest_loaded: ReleaseManifest,
     base_libs_dir: Path,
+    mapping_function: MappingFunction | None,
     phase_name: str | None = None,
     lib_name_list: list[str] | None = None,
-    mapping_function: MappingFunction | None = None,
 ) -> Report:
     """
     Add a phase with one StepGetPrecompiledLibGithub per selected library declared in the release manifest.
@@ -421,11 +421,11 @@ def download_csorchestrator_managed_libraries(
     project_version: str,
     release_tag: str,
     base_libs_dir: Path,
+    mapping_function: MappingFunction | None,
     manifest_dest_folder: Path | None = None,
     bundle_dest_folder: Path | None = None,
     lib_name_list: list[str] | None = None,
     library_dependencies: dict[str, list[str]] | None = None,
-    mapping_function: MappingFunction | None = None,
 ) -> Report:
     if lib_name_list is not None:
         lib_name_list = resolve_library_dependencies(lib_name_list, library_dependencies)

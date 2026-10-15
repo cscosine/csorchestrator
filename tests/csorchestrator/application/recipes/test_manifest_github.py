@@ -61,6 +61,8 @@ def _release_manifest(
         packages={name for (_, pairs) in enumerate(pairs_per_variant) for (name, _) in pairs},
         headers_only_packages=set(),
         additional_files=[],
+        dependencies_dev={},
+        dependencies={},
         output_bundle_file_name=None,
         variants=[
             ManifestVersionsEntry(
@@ -86,6 +88,7 @@ def test_create_steps_to_get_libs_from_manifest_creates_one_step_per_lib_with_de
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
+        mapping_function=None,
     )
 
     assert not report.has_errors()
@@ -122,6 +125,7 @@ def test_create_steps_to_get_libs_from_manifest_custom_phase_name():
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
         phase_name="get precompiled libs",
+        mapping_function=None,
     )
 
     assert not report.has_errors()
@@ -143,6 +147,7 @@ def test_create_steps_to_get_libs_from_manifest_errors_when_lib_has_multiple_ver
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
+        mapping_function=None,
     )
 
     assert report.has_errors()
@@ -166,6 +171,7 @@ def test_create_steps_to_get_libs_from_manifest_lib_declared_only_in_one_variant
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
+        mapping_function=None,
     )
 
     assert not report.has_errors()
@@ -185,6 +191,7 @@ def test_create_steps_to_get_libs_from_manifest_empty_manifest_creates_empty_pha
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
+        mapping_function=None,
     )
 
     assert not report.has_errors()
@@ -207,6 +214,7 @@ def test_create_steps_to_get_libs_from_manifest_subsample_with_lib_name_list():
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
         lib_name_list=["fmt"],
+        mapping_function=None,
     )
 
     assert not report.has_errors()
@@ -223,6 +231,8 @@ def _release_manifest_with_bundle(bundle_file_name: str | None) -> ReleaseManife
         additional_files=["csBaseLibs/csorchestrator_config.py"],
         output_bundle_file_name=bundle_file_name,
         variants=[],
+        dependencies_dev={},
+        dependencies={},
     )
 
 

@@ -76,6 +76,22 @@ MappingFunction = Callable[
 ]
 
 
+# h = compose(f, g)  f(g(x))
+def compose_mapping_function(
+    f: MappingFunction,
+    g: MappingFunction,
+) -> MappingFunction:
+    def composed(
+        context: ContextOsArchitectureCompilerGenerator,
+    ) -> ContextOsArchitectureCompilerGenerator | None:
+        intermediate = g(context)
+        if intermediate is None:
+            return None
+        return f(intermediate)
+
+    return composed
+
+
 @dataclass
 class StepGetPrecompiledLibGithub(StepBase):
     base_url: str

@@ -2,7 +2,10 @@ from dataclasses import dataclass
 from typing import TypeAlias
 
 from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
-from csorchestrator.portable.release_manifest import PublishPackageMode, ReposPublishConfigDict
+from csorchestrator.portable.release_manifest import (
+    PublishPackageMode,
+    ReposPublishConfigDict,
+)
 
 
 @dataclass(frozen=True)
@@ -19,7 +22,9 @@ RepoRefBuildPublishConfigDict: TypeAlias = dict[str, RepoRefBuildPublishConfig]
 ReposBuildConfigDict: TypeAlias = dict[str, BuildConfig | None]
 
 
-def extract_build_config_dict(repos: RepoRefBuildPublishConfigDict) -> ReposBuildConfigDict:
+def extract_build_config_dict(
+    repos: RepoRefBuildPublishConfigDict,
+) -> ReposBuildConfigDict:
     ret: ReposBuildConfigDict = {}
     for repo, config in repos.items():
         ret[repo] = config.build_config
@@ -36,10 +41,13 @@ def extract_repo_ref_dict(repos: RepoRefBuildPublishConfigDict) -> ReposRefDict:
     return ret
 
 
-def extract_repo_publish_config_dict(repos: RepoRefBuildPublishConfigDict) -> ReposPublishConfigDict:
+def extract_repo_publish_config_dict(
+    repos: RepoRefBuildPublishConfigDict,
+) -> ReposPublishConfigDict:
     ret: ReposPublishConfigDict = {}
     for repo, config in repos.items():
-        ret[repo] = config.publish_mode
+        if config.build_config is not None:
+            ret[repo] = config.publish_mode
     return ret
 
 

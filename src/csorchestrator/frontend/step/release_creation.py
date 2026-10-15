@@ -95,6 +95,8 @@ class ReleaseCreationOnTagConfig(ReleaseCreationOnTagConfigBase):
     artifacts_dir: str  # used only in github execution, specfify folders where artifacts are downloaded
     additional_files_list: list[Path]  # list of additional files
     output_bundle_file_name: Path
+    dependencies: dict[str, set[str]]
+    dependencies_dev: dict[str, set[str]]
     repo_publish_config_dict: ReposPublishConfigDict | None = None
     output_folder_for_generated_files: Path = Path("generated-for-release")
 
@@ -217,6 +219,18 @@ def release_creation_on_tag_config_to_githubwf(
         repr(header_only_variants_sources),
     )
 
+    python_code = replace_template_variable(
+        python_code,
+        "dependencies",
+        repr(step.dependencies),
+    )
+
+    python_code = replace_template_variable(
+        python_code,
+        "dependencies_dev",
+        repr(step.dependencies_dev),
+    )
+
     python_lines = python_code.splitlines()
 
     step_github = StepRunCommand(
@@ -320,6 +334,8 @@ def release_creation_on_tag_config_execute_local(
         repo_publish_config_dict=repo_publish_config_dict,
         header_only_variants_sources=header_only_variants_sources,
         archive_files_are_in_context_based_folder=False,
+        dependencies=step.dependencies,
+        dependencies_dev=step.dependencies_dev,
     )
     if len(errors) > 0:
         for e in errors:

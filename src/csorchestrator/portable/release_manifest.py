@@ -1,6 +1,7 @@
 import json
 import shutil
 import tarfile
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -64,6 +65,9 @@ class ReleaseManifest:
     packages: set[str]
     headers_only_packages: set[str]
 
+    dependencies: dict[str, set[str]]
+    dependencies_dev: dict[str, set[str]]
+
     output_bundle_file_name: str | None
 
     variants: list[ManifestVersionsEntry] = field(default_factory=list)
@@ -74,6 +78,17 @@ class ReleaseManifest:
 
     CSORCHESTRATOR_MANIFEST_EXTENSION: ClassVar[str] = ".csOrchestratorManifest"
     CSORCHESTRATOR_MANIFEST_ROOT: ClassVar[str] = "csorchestrator_manifest"
+
+    def __post_init__(self) -> None:
+        # ensure dependencies and dependencies_dev are fille in with all packages
+        all_packages = deepcopy(self.packages)
+        all_packages = all_packages.union(self.headers_only_packages)
+
+        for p in all_packages:
+            if p not in self.dependencies:
+                self.dependencies[p] = set()
+            if p not in self.dependencies_dev:
+                self.dependencies_dev[p] = set()
 
     @classmethod
     def create_manifest_filename_from_project_name_and_version_string(cls, project_name_version: str) -> str:
@@ -93,6 +108,8 @@ class ReleaseManifest:
                 "additional_files": list(self.additional_files),
                 "packages": list(self.packages),
                 "headers_only_packages": list(self.headers_only_packages),
+                "dependencies": {name: sorted(deps) for name, deps in self.dependencies.items()},
+                "dependencies_dev": {name: sorted(deps) for name, deps in self.dependencies_dev.items()},
                 "output_bundle_file_name": self.output_bundle_file_name,
                 "variants": [variant.to_dict() for variant in self.variants],
             }
@@ -108,6 +125,8 @@ class ReleaseManifest:
             additional_files=in_data["additional_files"],
             packages=set(in_data["packages"]),
             headers_only_packages=set(in_data["headers_only_packages"]),
+            dependencies={name: set(deps) for name, deps in in_data["dependencies"].items()},
+            dependencies_dev={name: set(deps) for name, deps in in_data["dependencies_dev"].items()},
             output_bundle_file_name=in_data["output_bundle_file_name"],
             variants=[ManifestVersionsEntry.from_dict(variant) for variant in in_data["variants"]],
         )
@@ -164,6 +183,8 @@ def get_package_versions_and_write_single_variant_manifest(
         project_version=project_version,
         packages={package.name for package in entry.entries},
         headers_only_packages=set(),
+        dependencies_dev={},
+        dependencies={},
         variants=[entry],
         additional_files=[],
         output_bundle_file_name=None,
@@ -175,7 +196,8 @@ def get_package_versions_and_write_single_variant_manifest(
 
 
 def load_release_manifest_single_variant(
-    input_full_path: Path, expected_context_os_architecture_compiler_generator_string: str
+    input_full_path: Path,
+    expected_context_os_architecture_compiler_generator_string: str,
 ) -> list[PackageVersion] | str:  # str in case of error
     packages = ReleaseManifest.load_release_manifest(input_full_path)
     if len(packages.variants) == 0 or len(packages.variants) > 1:
@@ -187,7 +209,10 @@ def load_release_manifest_single_variant(
     return packages.variants[0].entries
 
 
-def create_artifact_name(project_name_and_version: str, context_os_architecture_compiler_generator_string: str) -> str:
+def create_artifact_name(
+    project_name_and_version: str,
+    context_os_architecture_compiler_generator_string: str,
+) -> str:
     return f"{project_name_and_version}-{context_os_architecture_compiler_generator_string}"
 
 
@@ -232,7 +257,10 @@ def load_release_manifest_single_variant_and_prepare_archive(
             input_base_dir
             / Path(
                 create_archive_filename(
-                    project_name_and_version, context_os_architecture_compiler_generator_string, item.name, item.version
+                    project_name_and_version,
+                    context_os_architecture_compiler_generator_string,
+                    item.name,
+                    item.version,
                 )
             )
         ).resolve()
@@ -296,6 +324,8 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
     header_only_variants_sources: dict[
         str, str
     ],  # csv1-windows --> csv1-windows-11- .... csv1-linux --> csv1-linux-ubuntu ....
+    dependencies: dict[str, set[str]],
+    dependencies_dev: dict[str, set[str]],
     archive_files_are_in_context_based_folder: bool,
 ) -> list[str]:  # return errors
 
@@ -303,7 +333,10 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
     # and collect all packages names as single set
     packages_names_set: set[str] = set()
     collected_version_entries: list[ManifestVersionsEntry] = []
-    for input_full_path, context_os_architecture_compiler_generator_string in input_manifest_path_variant:
+    for (
+        input_full_path,
+        context_os_architecture_compiler_generator_string,
+    ) in input_manifest_path_variant:
         packages_or_error = load_release_manifest_single_variant(
             input_full_path, context_os_architecture_compiler_generator_string
         )
@@ -315,7 +348,10 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
         packages_names_set |= {package.name for package in packages}
 
         collected_version_entries.append(
-            ManifestVersionsEntry(variant=context_os_architecture_compiler_generator_string, entries=packages)
+            ManifestVersionsEntry(
+                variant=context_os_architecture_compiler_generator_string,
+                entries=packages,
+            )
         )
 
     # add defaults AS_VARIANT to repo_publish_config_dict
@@ -373,7 +409,10 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
     # collect headers only to representative headers only versions
     files_to_move: list[tuple[str, str]] = []
     subfolders_to_create: set[str] = set()
-    for header_only_variant, header_only_variant_src in header_only_variants_sources.items():
+    for (
+        header_only_variant,
+        header_only_variant_src,
+    ) in header_only_variants_sources.items():
         entries: list[PackageVersion] = []
         version_entry: ManifestVersionsEntry | None = None
         for variant in collected_version_entries:
@@ -451,6 +490,8 @@ def collect_release_manifest_single_variant_and_prepare_manifest(
         variants=final_collected_version_entries,
         additional_files=[file.as_posix() for file in list_additional_files],
         output_bundle_file_name=output_bundle_file_name.as_posix(),
+        dependencies=dependencies,
+        dependencies_dev=dependencies_dev,
     )
     release_manifest.write_release_manifest(
         output_folder_additional_files / output_manifest_filename,

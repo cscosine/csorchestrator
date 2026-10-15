@@ -35,6 +35,8 @@ def create_default_orchestrator_and_default_checkout_build_upload(
     base_target_dir: Path,
     base_install_dir: Path,
     repo_ref_build_publish_config_dict: RepoRefBuildPublishConfigDict | None = None,
+    repo_dependencies_dict: dict[str, set[str]] | None = None,
+    repo_dependencies_dev_dict: dict[str, set[str]] | None = None,
     execution_matrix_name: str = "orchestrator-matrix",
     on_push_branches: list[str] | None = None,
     on_pull_request_branches: list[str] | None = None,
@@ -57,10 +59,18 @@ def create_default_orchestrator_and_default_checkout_build_upload(
     if repo_ref_build_publish_config_dict is None:
         repo_ref_build_publish_config_dict = {}
 
+    if repo_dependencies_dict is None:
+        repo_dependencies_dict = {}
+
+    if repo_dependencies_dev_dict is None:
+        repo_dependencies_dev_dict = {}
+
     o = create_default_orchestrator(
         name=name,
         version=version,
         base_install_dir=base_install_dir,
+        repo_dependencies_dict=repo_dependencies_dict,
+        repo_dependencies_dev_dict=repo_dependencies_dev_dict,
         repo_publish_config_dict=extract_repo_publish_config_dict(repo_ref_build_publish_config_dict),
         execution_matrix_name=execution_matrix_name,
         on_push_branches=on_push_branches,
@@ -96,6 +106,8 @@ def create_default_orchestrator(
     version: str,
     base_install_dir: Path,
     repo_publish_config_dict: ReposPublishConfigDict | None = None,
+    repo_dependencies_dict: dict[str, set[str]] | None = None,
+    repo_dependencies_dev_dict: dict[str, set[str]] | None = None,
     execution_matrix_name: str = "orchestrator-matrix",
     on_push_branches: list[str] | None = None,
     on_pull_request_branches: list[str] | None = None,
@@ -122,6 +134,12 @@ def create_default_orchestrator(
     if repo_publish_config_dict is None:
         repo_publish_config_dict = {}
 
+    if repo_dependencies_dict is None:
+        repo_dependencies_dict = {}
+
+    if repo_dependencies_dev_dict is None:
+        repo_dependencies_dev_dict = {}
+
     o = create_orchestrator_factory_all_supported_cases(
         name=name,
         version=version,
@@ -147,6 +165,8 @@ def create_default_orchestrator(
             additional_files_list=additional_files_list,
             output_bundle_file_name=output_bundle_file_name,
             repo_publish_config_dict=repo_publish_config_dict,
+            dependencies=repo_dependencies_dict,
+            dependencies_dev=repo_dependencies_dev_dict,
         ),
     )
 

@@ -20,6 +20,8 @@ output_folder_additional_files = cast(Path, "_")
 output_bundle_file_name = cast(Path, "_")
 repo_publish_config_dict = cast(ReposPublishConfigDict, "_")
 header_only_variants_sources = cast(dict[str, str], "_")
+dependencies = cast(dict[str, set[str]], "_")
+dependencies_dev = cast(dict[str, set[str]], "_")
 
 errors_list = collect_release_manifest_single_variant_and_prepare_manifest(
     input_folder_base=input_folder_base,
@@ -34,6 +36,8 @@ errors_list = collect_release_manifest_single_variant_and_prepare_manifest(
     repo_publish_config_dict=repo_publish_config_dict,
     header_only_variants_sources=header_only_variants_sources,
     archive_files_are_in_context_based_folder=True,
+    dependencies=dependencies,
+    dependencies_dev=dependencies_dev,
 )
 
 if len(errors_list) > 0:
