@@ -18,6 +18,7 @@ from csorchestrator.application.recipes.manifest_github import (
 from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
 from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
     StepGetPrecompiledLibGithub,
+    identity_mapping_function,
 )
 from csorchestrator.portable.package_version import PackageVersion
 from csorchestrator.portable.release_manifest import (
@@ -88,7 +89,7 @@ def test_create_steps_to_get_libs_from_manifest_creates_one_step_per_lib_with_de
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
-        mapping_function=None,
+        mapping_function=identity_mapping_function,
     )
 
     assert not report.has_errors()
@@ -125,7 +126,7 @@ def test_create_steps_to_get_libs_from_manifest_custom_phase_name():
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
         phase_name="get precompiled libs",
-        mapping_function=None,
+        mapping_function=identity_mapping_function,
     )
 
     assert not report.has_errors()
@@ -147,7 +148,7 @@ def test_create_steps_to_get_libs_from_manifest_errors_when_lib_has_multiple_ver
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
-        mapping_function=None,
+        mapping_function=identity_mapping_function,
     )
 
     assert report.has_errors()
@@ -171,7 +172,7 @@ def test_create_steps_to_get_libs_from_manifest_lib_declared_only_in_one_variant
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
-        mapping_function=None,
+        mapping_function=identity_mapping_function,
     )
 
     assert not report.has_errors()
@@ -191,7 +192,7 @@ def test_create_steps_to_get_libs_from_manifest_empty_manifest_creates_empty_pha
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
-        mapping_function=None,
+        mapping_function=identity_mapping_function,
     )
 
     assert not report.has_errors()
@@ -214,7 +215,7 @@ def test_create_steps_to_get_libs_from_manifest_subsample_with_lib_name_list():
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
         lib_name_list=["fmt"],
-        mapping_function=None,
+        mapping_function=identity_mapping_function,
     )
 
     assert not report.has_errors()

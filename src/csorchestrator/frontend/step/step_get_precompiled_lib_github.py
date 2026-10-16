@@ -76,6 +76,12 @@ MappingFunction = Callable[
 ]
 
 
+def identity_mapping_function(
+    context: ContextOsArchitectureCompilerGenerator,
+) -> ContextOsArchitectureCompilerGenerator | None:
+    return context
+
+
 # h = compose(f, g)  f(g(x))
 def compose_mapping_function(
     f: MappingFunction,
@@ -104,7 +110,7 @@ class StepGetPrecompiledLibGithub(StepBase):
     lib_version: str
     base_libs_dir: Path
     headers_only: bool
-    mapping_function: MappingFunction | None = None
+    mapping_function: MappingFunction
 
     def __post_init__(self) -> None:
         self.add_capability(
@@ -149,7 +155,7 @@ def execute_step_get_precompiled_lib(
         context.get_active_os_architecture_compiler_generator()
     )
 
-    if step.mapping_function is None:
+    if step.mapping_function == identity_mapping_function:
         if step.headers_only:
             source_lib_variant = create_header_only_variant_string(
                 context.get_active_os_architecture_compiler_generator().context_os_architecture.os
@@ -264,7 +270,7 @@ def step_get_precompiled_lib_to_githubwf(
 
     steps: list[GithubStepInterface] = []
 
-    if step.mapping_function is None:
+    if step.mapping_function == identity_mapping_function:
         if step.headers_only:
             source_lib_variant = create_header_only_variant_string_github_matrix()
             release_name_part = source_lib_variant

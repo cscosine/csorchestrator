@@ -166,7 +166,7 @@ def create_steps_to_get_libs_from_manifest(
     manifest_description: ManifestGithub,
     manifest_loaded: ReleaseManifest,
     base_libs_dir: Path,
-    mapping_function: MappingFunction | None,
+    mapping_function: MappingFunction,
     phase_name: str | None = None,
     lib_name_list: list[str] | None = None,
     dev: bool = False,
@@ -258,7 +258,7 @@ def create_steps_to_get_libs_from_manifest(
         )
 
     if phase_name is None:
-        phase_name = f"get libraries from {manifest_description.project_name}{manifest_description.project_version}"
+        phase_name = f"get libraries from {manifest_description.project_name} {manifest_description.project_version}"
 
     p = orchestrator.create_phase(phase_name)
     for step in steps:
