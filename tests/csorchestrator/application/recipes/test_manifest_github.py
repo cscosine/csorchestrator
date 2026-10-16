@@ -8,7 +8,6 @@ from csorchestrator.application.factory.factory import (
     create_orchestrator_factory_all_supported_cases,
 )
 from csorchestrator.application.recipes.manifest_github import (
-    LibraryDependenciesMap,
     ManifestGithub,
     create_steps_to_get_libs_from_manifest,
     download_manifest_bundle,
@@ -30,7 +29,7 @@ PROJECT_NAME = "3rdPartyBaseLibs"
 REPO_NAME = "3rdPartyBaseLibsRepo"
 PROJECT_VERSION = "0.1.0"
 PROJECT_TAG = "vX.X.X"
-DEFAULT_PHASE_NAME = "get libraries from 3rdPartyBaseLibs0.1.0"
+DEFAULT_PHASE_NAME = "get libraries from 3rdPartyBaseLibs 0.1.0"
 
 
 def _manifest_description() -> ManifestGithub:
@@ -334,7 +333,7 @@ def test_resolve_library_dependencies_expands_transitive_dependencies():
 
 
 def test_merge_library_dependencies():
-    library_dependencies: LibraryDependenciesMap = {
+    library_dependencies = {
         "A": ["a"],
         "B": ["a", "b"],
         "C": ["a", "b", "c"],
@@ -342,14 +341,14 @@ def test_merge_library_dependencies():
     }
 
     # project additional dependencies for `dev`
-    library_dependencies_dev: LibraryDependenciesMap = {
+    library_dependencies_dev = {
         "A": ["aDebug"],
         "B": ["bDebug"],
         "C": ["cDebug"],
         "D": ["dDebug"],
     }
 
-    library_dependencies_merged: LibraryDependenciesMap = {
+    library_dependencies_merged = {
         "A": ["a", "aDebug"],
         "B": ["a", "b", "bDebug"],
         "C": ["a", "b", "c", "cDebug"],

@@ -1,3 +1,4 @@
+import importlib
 import os
 import tarfile
 from copy import deepcopy
@@ -27,6 +28,7 @@ from csorchestrator.frontend.step.step_custom_command import StepInstallAptPacka
 from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
     MappingFunction,
     StepGetPrecompiledLibGithub,
+    compose_mapping_function,
     create_github_release_download_url,
 )
 from csorchestrator.frontend.step.step_get_repository import StepGetRepositoryGitHub
@@ -51,13 +53,15 @@ class ManifestGithub:
     # with keyring in local and token in github
 
 
-# plain list of the libraries
-# ["myLib", "myOtherLib"]
-LibraryList: TypeAlias = list[str]
+ProviderNameLibsList: TypeAlias = dict[str, list[str]]
 
-# dict lib name -> its dependencies
-# {"myLib" : ["coreLib", "baseLib"], "myOtherLib" : ["myOtherLib"]}
-LibraryDependenciesMap: TypeAlias = dict[str, LibraryList]
+
+def extract_provider_names(providers: list[ManifestGithub]) -> list[str]:
+    ret: list[str] = []
+    for p in providers:
+        ret.append(p.project_name)
+    return ret
+
 
 # dict external lib provider name -> its dependencies
 # {
@@ -72,23 +76,11 @@ LibraryDependenciesMap: TypeAlias = dict[str, LibraryList]
 #       "myOtherLib": ["gui_other_lib"],
 #     }
 #   }
-ExternalLibraryDependenciesMap: TypeAlias = dict[str, LibraryDependenciesMap]
-
-ProviderList: TypeAlias = list[ManifestGithub]
-
-ProviderNameLibsList: TypeAlias = dict[str, list[str]]
-
-
-def extract_provider_names(providers: ProviderList) -> list[str]:
-    ret: list[str] = []
-    for p in providers:
-        ret.append(p.project_name)
-    return ret
 
 
 def fill_in_providers_in_dependencies(
-    dependencies: ExternalLibraryDependenciesMap, provider_names: list[str]
-) -> ExternalLibraryDependenciesMap:
+    dependencies: dict[str, dict[str, list[str]]], provider_names: list[str]
+) -> dict[str, dict[str, list[str]]]:
     ret = deepcopy(dependencies)
     for p in provider_names:
         if p not in dependencies:
@@ -96,9 +88,14 @@ def fill_in_providers_in_dependencies(
     return ret
 
 
+# dict[str, list[str]]
+# dict lib name -> its dependencies
+# {"myLib" : ["coreLib", "baseLib"], "myOtherLib" : ["myOtherLib"]}
+
+
 def fill_in_libraries_in_dependecies(
-    dependencies: LibraryDependenciesMap, library_names: list[str]
-) -> LibraryDependenciesMap:
+    dependencies: dict[str, list[str]], library_names: list[str]
+) -> dict[str, list[str]]:
     ret = deepcopy(dependencies)
     for p in library_names:
         if p not in dependencies:
@@ -108,18 +105,19 @@ def fill_in_libraries_in_dependecies(
 
 
 def fill_in_providers_and_libs_in_dependencies(
-    dependencies: ExternalLibraryDependenciesMap,
+    dependencies: dict[str, dict[str, list[str]]],
     provider_names: list[str],
     library_names: list[str],
-) -> ExternalLibraryDependenciesMap:
+) -> dict[str, dict[str, list[str]]]:
     dependencies = fill_in_providers_in_dependencies(dependencies, provider_names)
     ret = deepcopy(dependencies)
-    for _, libs in ret.items():
+    for p, libs in ret.items():
         libs = fill_in_libraries_in_dependecies(libs, library_names)
+        ret[p] = libs
     return ret
 
 
-def merge_library_dependencies(src: LibraryDependenciesMap, add: LibraryDependenciesMap) -> LibraryDependenciesMap:
+def merge_library_dependencies(src: dict[str, list[str]], add: dict[str, list[str]]) -> dict[str, list[str]]:
     dst = deepcopy(src)
     for a, ll in add.items():
         for e in ll:
@@ -129,8 +127,8 @@ def merge_library_dependencies(src: LibraryDependenciesMap, add: LibraryDependen
 
 
 def merge_providers_dependencies(
-    src: ExternalLibraryDependenciesMap, add: ExternalLibraryDependenciesMap
-) -> ExternalLibraryDependenciesMap:
+    src: dict[str, dict[str, list[str]]], add: dict[str, dict[str, list[str]]]
+) -> dict[str, dict[str, list[str]]]:
     dst = deepcopy(src)
     for p, lst in add.items():
         lst = merge_library_dependencies(lst, src[p])
@@ -138,14 +136,14 @@ def merge_providers_dependencies(
     return dst
 
 
-def fill_in_library_list(src: LibraryList | None, default: LibraryList) -> LibraryList:
+def fill_in_library_list(src: list[str] | None, default: list[str]) -> list[str]:
     if src is None:
         return deepcopy(default)
     return src
 
 
 def extract_provider_libs_list(
-    src: ExternalLibraryDependenciesMap,
+    src: dict[str, dict[str, list[str]]],
 ) -> ProviderNameLibsList:
     ret: ProviderNameLibsList = {}
     for provider, deps in src.items():
@@ -435,3 +433,115 @@ def install_ubuntu_apt_packages(
         .add_extra(StepExecuteOnlyOncePerMatrix())
         .add_extra(StepExecuteOnlyOn(os=OS.LINUX, version_starts_with=UBUNTU_STRING_PREFIX))
     )
+
+
+def resolve_libs_deps_and_install_dependencies(
+    orchestrator: Orchestrator,
+    base_libs_dir: Path,
+    dependencies_config_path: Path,
+    dev: bool,
+    download_dependencies_manifest_and_bundle: bool,
+    mapping_function: MappingFunction,
+    required_libs: list[str] | None,  # none means all
+    full_library_list: list[str],
+    library_dependencies: dict[str, list[str]],
+    library_dependencies_dev: dict[str, list[str]],
+    external_provides_description: list[ManifestGithub],
+    external_library_dependencies: dict[str, dict[str, list[str]]],
+    external_library_dependencies_dev: dict[str, dict[str, list[str]]],
+    provider_mapping_function: dict[str, str],
+) -> Report:
+    report = Report()
+
+    # convert to map with names
+    external_providers_map: dict[str, ManifestGithub] = {}
+    for m in external_provides_description:
+        external_providers_map[m.project_name] = m
+
+    # the library requested, completed with the known list
+    required_libs = fill_in_library_list(required_libs, full_library_list)
+
+    # the library self dependencies
+    libs_self_dependencies = fill_in_libraries_in_dependecies(library_dependencies, full_library_list)
+    if dev:
+        # extend them if we are in dev mode
+        libs_self_dependencies = merge_library_dependencies(
+            fill_in_libraries_in_dependecies(library_dependencies, full_library_list),
+            fill_in_libraries_in_dependecies(library_dependencies_dev, full_library_list),
+        )
+
+    # the library effectively requested, after resolving dependencies
+    required_libs = resolve_library_dependencies(required_libs, libs_self_dependencies)
+
+    # the indirect dependencies
+    libs_external_dependencies = fill_in_providers_and_libs_in_dependencies(
+        external_library_dependencies,
+        extract_provider_names(external_provides_description),
+        full_library_list,
+    )
+    if dev:
+        libs_external_dependencies_dev = fill_in_providers_and_libs_in_dependencies(
+            external_library_dependencies_dev,
+            extract_provider_names(external_provides_description),
+            full_library_list,
+        )
+        libs_external_dependencies = merge_providers_dependencies(
+            libs_external_dependencies, libs_external_dependencies_dev
+        )
+
+    if download_dependencies_manifest_and_bundle:
+        for _, provider_manifest_desc in external_providers_map.items():
+            manifest_filename = Path(provider_manifest_desc.create_manifest_filename())
+
+            manifest = download_manifest(provider_manifest_desc, dependencies_config_path)
+            report.append_report(manifest.report)
+            if manifest.result is not None:
+                report.append_report(
+                    download_manifest_bundle(
+                        provider_manifest_desc,
+                        ReleaseManifest.load_release_manifest(manifest.result),
+                        dependencies_config_path,
+                    )
+                )
+
+    if report.has_errors():
+        return report
+
+    # for each provider, load the module it provides and run its autoinstall
+    provider_libs_list = extract_provider_libs_list(libs_external_dependencies)
+
+    for provider, libs in provider_libs_list.items():
+        module_name = f"{dependencies_config_path.as_posix()}.{provider}_config"
+
+        provider_module = importlib.import_module(module_name)
+
+        provider_manifest_desc = external_providers_map[provider]
+
+        manifest_filename = Path(provider_manifest_desc.create_manifest_filename())
+
+        provider_manifest_loaded = ReleaseManifest.load_release_manifest(
+            dependencies_config_path.as_posix() / manifest_filename
+        )
+
+        provider_mapping_function_name = None
+        if provider in provider_mapping_function:
+            provider_mapping_function_name = provider_mapping_function[provider]
+
+        composed_mapping = mapping_function
+        if provider_mapping_function_name is not None:
+            function = getattr(provider_module, provider_mapping_function_name)
+            composed_mapping = compose_mapping_function(mapping_function, function)
+
+        report.append_report(
+            provider_module.auto_install_csorchestrator_managed_libraries(
+                orchestrator=orchestrator,
+                base_libs_dir=base_libs_dir,
+                required_libs=libs,
+                manifest_description=provider_manifest_desc,
+                manifest_loaded=provider_manifest_loaded,
+                dependencies_config_path=dependencies_config_path,
+                mapping_function=composed_mapping,
+            )
+        )
+
+    return report
