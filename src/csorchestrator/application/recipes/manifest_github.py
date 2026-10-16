@@ -142,14 +142,13 @@ def fill_in_library_list(src: list[str] | None, default: list[str]) -> list[str]
     return src
 
 
-def extract_provider_libs_list(
-    src: dict[str, dict[str, list[str]]],
-) -> ProviderNameLibsList:
+def extract_provider_libs_list(src: dict[str, dict[str, list[str]]], required_libs: list[str]) -> ProviderNameLibsList:
     ret: ProviderNameLibsList = {}
     for provider, deps in src.items():
         ret[provider] = []
-        for _, libs in deps.items():
-            ret[provider].extend(libs)
+        for src_lib, libs in deps.items():
+            if src_lib in required_libs:
+                ret[provider].extend(libs)
         ret[provider] = list(set(ret[provider]))
     return ret
 
@@ -473,6 +472,8 @@ def resolve_libs_deps_and_install_dependencies(
     # the library effectively requested, after resolving dependencies
     required_libs = resolve_library_dependencies(required_libs, libs_self_dependencies)
 
+    print(f"required_libs {required_libs}")
+
     # the indirect dependencies
     libs_external_dependencies = fill_in_providers_and_libs_in_dependencies(
         external_library_dependencies,
@@ -488,6 +489,8 @@ def resolve_libs_deps_and_install_dependencies(
         libs_external_dependencies = merge_providers_dependencies(
             libs_external_dependencies, libs_external_dependencies_dev
         )
+
+    print(f"libs_external_dependencies {libs_external_dependencies}")
 
     if download_dependencies_manifest_and_bundle:
         for _, provider_manifest_desc in external_providers_map.items():
@@ -508,7 +511,8 @@ def resolve_libs_deps_and_install_dependencies(
         return report
 
     # for each provider, load the module it provides and run its autoinstall
-    provider_libs_list = extract_provider_libs_list(libs_external_dependencies)
+    provider_libs_list = extract_provider_libs_list(libs_external_dependencies, required_libs)
+    print(f"provider_libs_list {provider_libs_list}")
 
     for provider, libs in provider_libs_list.items():
         module_name = f"{dependencies_config_path.as_posix()}.{provider}_config"
@@ -531,6 +535,8 @@ def resolve_libs_deps_and_install_dependencies(
         if provider_mapping_function_name is not None:
             function = getattr(provider_module, provider_mapping_function_name)
             composed_mapping = compose_mapping_function(mapping_function, function)
+
+        print(f"GET from {provider} libs: {libs}")
 
         report.append_report(
             provider_module.auto_install_csorchestrator_managed_libraries(
