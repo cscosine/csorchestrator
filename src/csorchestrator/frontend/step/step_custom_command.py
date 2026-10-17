@@ -284,8 +284,8 @@ def get_if_str(step: StepBase) -> str | None:
 
             return if_str
     elif step.get_extra(StepGithubIfAlways) is not None:
-        execute_alwayw = step.get_extra(StepGithubIfAlways)
-        if execute_alwayw is not None:
+        execute_always = step.get_extra(StepGithubIfAlways)
+        if execute_always is not None:
             if_str = "always()"
             return if_str
     return None

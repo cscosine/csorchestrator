@@ -89,6 +89,8 @@ def test_create_steps_to_get_libs_from_manifest_creates_one_step_per_lib_with_de
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
         mapping_function=identity_mapping_function,
+        phase_name=DEFAULT_PHASE_NAME,
+        dev=False,
     )
 
     assert not report.has_errors()
@@ -126,6 +128,7 @@ def test_create_steps_to_get_libs_from_manifest_custom_phase_name():
         base_libs_dir=Path("workspace/libs"),
         phase_name="get precompiled libs",
         mapping_function=identity_mapping_function,
+        dev=False,
     )
 
     assert not report.has_errors()
@@ -148,6 +151,8 @@ def test_create_steps_to_get_libs_from_manifest_errors_when_lib_has_multiple_ver
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
         mapping_function=identity_mapping_function,
+        phase_name="",
+        dev=False,
     )
 
     assert report.has_errors()
@@ -172,6 +177,8 @@ def test_create_steps_to_get_libs_from_manifest_lib_declared_only_in_one_variant
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
         mapping_function=identity_mapping_function,
+        phase_name="",
+        dev=False,
     )
 
     assert not report.has_errors()
@@ -192,6 +199,8 @@ def test_create_steps_to_get_libs_from_manifest_empty_manifest_creates_empty_pha
         manifest_loaded=manifest,
         base_libs_dir=Path("workspace/libs"),
         mapping_function=identity_mapping_function,
+        phase_name=DEFAULT_PHASE_NAME,
+        dev=False,
     )
 
     assert not report.has_errors()
@@ -215,6 +224,8 @@ def test_create_steps_to_get_libs_from_manifest_subsample_with_lib_name_list():
         base_libs_dir=Path("workspace/libs"),
         lib_name_list=["fmt"],
         mapping_function=identity_mapping_function,
+        phase_name="",
+        dev=False,
     )
 
     assert not report.has_errors()

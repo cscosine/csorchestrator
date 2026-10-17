@@ -164,9 +164,9 @@ def create_steps_to_get_libs_from_manifest(
     manifest_loaded: ReleaseManifest,
     base_libs_dir: Path,
     mapping_function: MappingFunction,
-    phase_name: str | None = None,
+    phase_name: str,
+    dev: bool,
     lib_name_list: list[str] | None = None,
-    dev: bool = False,
 ) -> Report:
     """
     Add a phase with one StepGetPrecompiledLibGithub per selected library declared in the release manifest.
@@ -449,6 +449,7 @@ def resolve_libs_deps_and_install_dependencies(
     external_library_dependencies: dict[str, dict[str, list[str]]],
     external_library_dependencies_dev: dict[str, dict[str, list[str]]],
     provider_mapping_function: dict[str, str],
+    phase_name_suffix: str,
 ) -> Report:
     report = Report()
 
@@ -472,8 +473,6 @@ def resolve_libs_deps_and_install_dependencies(
     # the library effectively requested, after resolving dependencies
     required_libs = resolve_library_dependencies(required_libs, libs_self_dependencies)
 
-    print(f"required_libs {required_libs}")
-
     # the indirect dependencies
     libs_external_dependencies = fill_in_providers_and_libs_in_dependencies(
         external_library_dependencies,
@@ -490,12 +489,10 @@ def resolve_libs_deps_and_install_dependencies(
             libs_external_dependencies, libs_external_dependencies_dev
         )
 
-    print(f"libs_external_dependencies {libs_external_dependencies}")
+    for _, provider_manifest_desc in external_providers_map.items():
+        manifest_filename = Path(provider_manifest_desc.create_manifest_filename())
 
-    if download_dependencies_manifest_and_bundle:
-        for _, provider_manifest_desc in external_providers_map.items():
-            manifest_filename = Path(provider_manifest_desc.create_manifest_filename())
-
+        if download_dependencies_manifest_and_bundle:
             manifest = download_manifest(provider_manifest_desc, dependencies_config_path)
             report.append_report(manifest.report)
             if manifest.result is not None:
@@ -506,13 +503,14 @@ def resolve_libs_deps_and_install_dependencies(
                         dependencies_config_path,
                     )
                 )
+        else:
+            report.append_warning(f"manifest {manifest_filename} download skipped")
 
     if report.has_errors():
         return report
 
     # for each provider, load the module it provides and run its autoinstall
     provider_libs_list = extract_provider_libs_list(libs_external_dependencies, required_libs)
-    print(f"provider_libs_list {provider_libs_list}")
 
     for provider, libs in provider_libs_list.items():
         module_name = f"{dependencies_config_path.as_posix()}.{provider}_config"
@@ -536,8 +534,6 @@ def resolve_libs_deps_and_install_dependencies(
             function = getattr(provider_module, provider_mapping_function_name)
             composed_mapping = compose_mapping_function(mapping_function, function)
 
-        print(f"GET from {provider} libs: {libs}")
-
         report.append_report(
             provider_module.auto_install_csorchestrator_managed_libraries(
                 orchestrator=orchestrator,
@@ -547,6 +543,8 @@ def resolve_libs_deps_and_install_dependencies(
                 manifest_loaded=provider_manifest_loaded,
                 dependencies_config_path=dependencies_config_path,
                 mapping_function=composed_mapping,
+                download_dependencies_manifest_and_bundle=download_dependencies_manifest_and_bundle,
+                phase_name_suffix=phase_name_suffix + " " + provider,
             )
         )
 
