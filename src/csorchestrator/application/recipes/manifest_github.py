@@ -4,7 +4,7 @@ import tarfile
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TypeAlias
+from typing import TypeAlias, assert_never
 from urllib import request
 from urllib.error import HTTPError, URLError
 
@@ -416,15 +416,16 @@ def resolve_library_dependencies(
 def install_ubuntu_apt_packages(
     orchestrator: Orchestrator,
     packages: list[str],
-    name: str = "install apt packages",
+    phase_name_suffix: str,
+    step_name: str = "install apt packages",
     description: str = "install apt packages if not already installed in the system",
-    phase_name: str = "Install Requirements (Linux-Ubuntu)",
+    phase_name: str = "Install apt packages (Linux-Ubuntu)",
 ) -> None:
 
-    p = orchestrator.create_phase(phase_name)
+    p = orchestrator.create_phase(phase_name + " " + phase_name_suffix)
     p.add_step(
         StepInstallAptPackages(
-            name=name,
+            name=step_name,
             description=description,
             packages=packages,
             dry_run=False,
@@ -448,7 +449,7 @@ def resolve_libs_deps_and_install_dependencies(
     external_provides_description: list[ManifestGithub],
     external_library_dependencies: dict[str, dict[str, list[str]]],
     external_library_dependencies_dev: dict[str, dict[str, list[str]]],
-    provider_mapping_function: dict[str, str],
+    provider_mapping_function: dict[str, str | MappingFunction],
     phase_name_suffix: str,
 ) -> Report:
     report = Report()
@@ -525,14 +526,20 @@ def resolve_libs_deps_and_install_dependencies(
             dependencies_config_path.as_posix() / manifest_filename
         )
 
-        provider_mapping_function_name = None
+        provider_mapping_function_to_use: MappingFunction | None = None
         if provider in provider_mapping_function:
-            provider_mapping_function_name = provider_mapping_function[provider]
+            provider_mapping_function_name_or_function = provider_mapping_function[provider]
+            if isinstance(provider_mapping_function_name_or_function, str):
+                provider_mapping_function_to_use = getattr(provider_module, provider_mapping_function_name_or_function)
+                ...
+            elif callable(provider_mapping_function_name_or_function):
+                provider_mapping_function_to_use = provider_mapping_function_name_or_function
+            else:
+                assert_never(provider_mapping_function_name_or_function)
 
         composed_mapping = mapping_function
-        if provider_mapping_function_name is not None:
-            function = getattr(provider_module, provider_mapping_function_name)
-            composed_mapping = compose_mapping_function(mapping_function, function)
+        if provider_mapping_function_to_use is not None:
+            composed_mapping = compose_mapping_function(mapping_function, provider_mapping_function_to_use)
 
         report.append_report(
             provider_module.auto_install_csorchestrator_managed_libraries(
