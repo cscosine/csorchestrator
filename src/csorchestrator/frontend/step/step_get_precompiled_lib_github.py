@@ -99,6 +99,40 @@ def compose_mapping_function(
 
 
 @dataclass
+class DownloadGithubFileEntry:
+    base_url: str
+    org: str
+    git_repo: str
+    tag: str
+    asset_filename: str
+
+    def to_string(self) -> str:
+        return urljoin(
+            self.base_url,
+            "/".join([self.org, self.git_repo, self.tag, self.asset_filename]),
+        )
+
+    def is_equal(self, other: "DownloadGithubFileEntry") -> bool:
+        return (
+            self.base_url == other.base_url
+            and self.org == other.org
+            and self.git_repo == other.git_repo
+            and self.tag == other.tag
+            and self.asset_filename == other.asset_filename
+        )
+
+    def is_incompatible(self, other: "DownloadGithubFileEntry") -> bool:
+        return (
+            self.base_url == other.base_url
+            and self.org == other.org
+            and self.git_repo == other.git_repo
+            and self.asset_filename == other.asset_filename
+            # but on different tag
+            and self.tag != other.tag
+        )
+
+
+@dataclass
 class StepGetPrecompiledLibGithub(StepBase):
     base_url: str
     org: str
@@ -129,18 +163,13 @@ class StepGetPrecompiledLibGithub(StepBase):
 
 
 def create_github_release_download_url(
-    base_url: str,
-    org: str,
-    git_repo: str,
-    tag: str,
-    asset_filename: str | Path,
+    entry: DownloadGithubFileEntry,
 ) -> str:
     """Create the download URL of an asset published in a GitHub release."""
-    asset_filename_str = asset_filename.as_posix() if isinstance(asset_filename, Path) else asset_filename
 
     return urljoin(
-        base_url,
-        "/".join([org, git_repo, "releases", "download", tag, asset_filename_str]),
+        entry.base_url,
+        "/".join([entry.org, entry.git_repo, "releases", "download", entry.tag, entry.asset_filename]),
     )
 
 
@@ -197,13 +226,15 @@ def execute_step_get_precompiled_lib(
     source_filename = filename
     target_filename = target_dir / filename
 
-    download_url = create_github_release_download_url(
+    fe = DownloadGithubFileEntry(
         base_url=step.base_url,
         org=step.org,
         git_repo=step.git_repo,
         tag=step.project_tag,
         asset_filename=source_filename,
     )
+
+    download_url = create_github_release_download_url(fe)
     report.append_info("download URL " + download_url + " to " + target_filename.as_posix())
 
     # download

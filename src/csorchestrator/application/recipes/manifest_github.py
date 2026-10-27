@@ -2,7 +2,7 @@ import importlib
 import os
 import tarfile
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TypeAlias, assert_never
 from urllib import request
@@ -13,6 +13,9 @@ from csorchestrator.domain.context.context_os_architecture import (
     UBUNTU_STRING_PREFIX,
 )
 from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
+from csorchestrator.domain.orchestrator.orchestrator_config_context import (
+    OrchestratorConfigBaseCapability,
+)
 from csorchestrator.foundation.core.optional_result_with_report import (
     OptionalResultWithReport,
 )
@@ -26,6 +29,7 @@ from csorchestrator.frontend.local_execution.step_utils import (
 )
 from csorchestrator.frontend.step.step_custom_command import StepInstallAptPackages
 from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
+    DownloadGithubFileEntry,
     MappingFunction,
     StepGetPrecompiledLibGithub,
     compose_mapping_function,
@@ -270,7 +274,49 @@ def create_manifest_filename(project_name: str, project_version: str) -> str:
     )
 
 
+@dataclass
+class DownloadGithubFileUniqueCopyCapability(OrchestratorConfigBaseCapability):
+    download_github_file_entries: list[DownloadGithubFileEntry] = field(default_factory=list)
+
+    def add_entry(self, e: DownloadGithubFileEntry) -> "DownloadGithubFileUniqueCopyCapability":
+        self.download_github_file_entries.append(e)
+        return self
+
+    def has_entry(self, e: DownloadGithubFileEntry) -> bool:
+        return any(entry.is_equal(e) for entry in self.download_github_file_entries)
+
+    def collect_incompatible_entries(self, e: DownloadGithubFileEntry) -> list[DownloadGithubFileEntry]:
+        return [entry for entry in self.download_github_file_entries if entry.is_incompatible(e)]
+
+
+def check_dowload_entry_duplicates_or_incompatibilities(
+    orchestrator: Orchestrator, entry: DownloadGithubFileEntry
+) -> tuple[Report, bool]:
+    # return bool True means continue to download
+
+    capability = orchestrator.config_context.get_capability(DownloadGithubFileUniqueCopyCapability)
+    if capability is None:
+        capability = DownloadGithubFileUniqueCopyCapability()
+        orchestrator.config_context.add_capability(capability, key=type(capability))
+
+    if capability.has_entry(entry):
+        return Report().append_info(f"Skip download of {entry.to_string()}, already downloaded"), False
+
+    not_compatible = capability.collect_incompatible_entries(entry)
+    if len(not_compatible) > 0:
+        error_str = "Error downloading {fe.to_string()}, found incompatible entries already downloaded: "
+        for nc in not_compatible:
+            error_str = error_str + nc.to_string()
+
+        return Report().append_error(error_str), False
+
+    capability.add_entry(entry)
+
+    return Report(), True
+
+
 def download_manifest_bundle(
+    orchestrator: Orchestrator,
     manifest_description: ManifestGithub,
     release_manifest: ReleaseManifest,
     extract_folder: Path,
@@ -304,13 +350,21 @@ def download_manifest_bundle(
     bundle_filename = Path(bundle_file_name).name
     target_filename = extract_dir / bundle_filename
 
-    download_url = create_github_release_download_url(
+    fe = DownloadGithubFileEntry(
         base_url=manifest_description.base_url,
         org=manifest_description.org,
         git_repo=manifest_description.git_repo,
         tag=manifest_description.release_tag,
         asset_filename=bundle_filename,
     )
+
+    report_tmp, to_continue = check_dowload_entry_duplicates_or_incompatibilities(orchestrator, fe)
+    report.append_report(report_tmp)
+
+    if not to_continue:
+        return report
+
+    download_url = create_github_release_download_url(fe)
     report.append_info("download URL " + download_url + " to " + target_filename.as_posix())
 
     try:
@@ -349,7 +403,11 @@ def download_manifest_bundle(
     return report
 
 
-def download_manifest(manifest_description: ManifestGithub, output_folder: Path) -> OptionalManifestPathWithReport:
+def download_manifest(
+    orchestrator: Orchestrator,
+    manifest_description: ManifestGithub,
+    output_folder: Path,
+) -> OptionalManifestPathWithReport:
     report = Report()
 
     dir_creation_res = ensure_directory_exists_or_create_and_is_usable(output_folder.resolve())
@@ -364,13 +422,21 @@ def download_manifest(manifest_description: ManifestGithub, output_folder: Path)
     source_filename = Path(manifest_description.create_manifest_filename())
     target_filename = target_dir / source_filename
 
-    download_url = create_github_release_download_url(
+    fe = DownloadGithubFileEntry(
         base_url=manifest_description.base_url,
         org=manifest_description.org,
         git_repo=manifest_description.git_repo,
         tag=manifest_description.release_tag,
-        asset_filename=source_filename,
+        asset_filename=source_filename.as_posix(),
     )
+
+    report_tmp, to_continue = check_dowload_entry_duplicates_or_incompatibilities(orchestrator, fe)
+    report.append_report(report_tmp)
+
+    if not to_continue:
+        return OptionalManifestPathWithReport.create_report(report)
+
+    download_url = create_github_release_download_url(fe)
     report.append_info("download URL " + download_url + " to " + target_filename.as_posix())
 
     # download
@@ -494,11 +560,12 @@ def resolve_libs_deps_and_install_dependencies(
         manifest_filename = Path(provider_manifest_desc.create_manifest_filename())
 
         if download_dependencies_manifest_and_bundle:
-            manifest = download_manifest(provider_manifest_desc, dependencies_config_path)
+            manifest = download_manifest(orchestrator, provider_manifest_desc, dependencies_config_path)
             report.append_report(manifest.report)
             if manifest.result is not None:
                 report.append_report(
                     download_manifest_bundle(
+                        orchestrator,
                         provider_manifest_desc,
                         ReleaseManifest.load_release_manifest(manifest.result),
                         dependencies_config_path,

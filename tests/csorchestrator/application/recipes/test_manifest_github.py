@@ -14,7 +14,7 @@ from csorchestrator.application.recipes.manifest_github import (
     merge_library_dependencies,
     resolve_library_dependencies,
 )
-from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
+from csorchestrator.domain.orchestrator.orchestrator import MatrixExecutionBase, Orchestrator
 from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
     StepGetPrecompiledLibGithub,
     identity_mapping_function,
@@ -261,6 +261,7 @@ def test_download_manifest_bundle_no_bundle_declared_does_nothing(tmp_path):
     extract_folder = tmp_path / "libs"
 
     report = download_manifest_bundle(
+        Orchestrator("o", "o", MatrixExecutionBase("m")),
         _manifest_description(),
         manifest,
         extract_folder,
@@ -283,6 +284,7 @@ def test_download_manifest_bundle_downloads_and_extracts(tmp_path, monkeypatch):
     extract_folder = tmp_path / "libs"
 
     report = download_manifest_bundle(
+        Orchestrator("o", "o", MatrixExecutionBase("m")),
         _manifest_description(),
         manifest,
         extract_folder,
@@ -306,6 +308,7 @@ def test_download_manifest_bundle_download_error_reported(tmp_path, monkeypatch)
     extract_folder = tmp_path / "libs"
 
     report = download_manifest_bundle(
+        Orchestrator("o", "o", MatrixExecutionBase("m")),
         _manifest_description(),
         manifest,
         extract_folder,

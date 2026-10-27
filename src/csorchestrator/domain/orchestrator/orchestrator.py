@@ -2,6 +2,7 @@ from abc import ABC
 from copy import deepcopy
 from dataclasses import dataclass, field
 
+from csorchestrator.domain.orchestrator.orchestrator_config_context import OrchestratorConfigContext
 from csorchestrator.domain.orchestrator.orchestrator_minimal_description import (
     OrchestratorExecutorMinimalDescription,
     PhaseNameWithStepNames,
@@ -41,6 +42,9 @@ class Orchestrator:
     version: str
     execution_matrix: MatrixExecutionBase
     phases: list[Phase] = field(default_factory=list)
+
+    config_context: OrchestratorConfigContext = field(default_factory=OrchestratorConfigContext)
+
     wf_config: WorkflowConfig | None = None
 
     def create_orchestrator_description(self) -> OrchestratorDescription:
