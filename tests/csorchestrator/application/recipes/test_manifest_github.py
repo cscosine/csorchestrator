@@ -204,8 +204,7 @@ def test_create_steps_to_get_libs_from_manifest_empty_manifest_creates_empty_pha
     )
 
     assert not report.has_errors()
-    assert [phase.name for phase in orchestrator.phases] == [DEFAULT_PHASE_NAME]
-    assert orchestrator.phases[0].steps == []
+    assert len(orchestrator.phases) == 0
 
 
 def test_create_steps_to_get_libs_from_manifest_subsample_with_lib_name_list():
