@@ -58,6 +58,9 @@ class ContextOsArchitecture:
     architecture_variant: str  # GENERIC ORIN XAVIER NANO
 
     def can_be_executed_on(self, other: "ContextOsArchitecture") -> bool:
+        # other is the execution architecture
+        # self is the matrix entry
+
         if self.os == OS.WINDOWS and other.os == OS.WINDOWS:
             # do not check version
             return (
@@ -65,6 +68,25 @@ class ContextOsArchitecture:
                 and self.architecture == other.architecture
                 and self.architecture_variant == other.architecture_variant
             )
+        elif self.os == OS.LINUX and other.os == OS.LINUX:
+            if (
+                self.architecture == Architecture.ARM64
+                and other.architecture == Architecture.ARM64
+                and self.os_version == other.os_version
+            ):
+                # matrix entry is the generic, executed on a nano board
+                return (self.architecture_variant == other.architecture_variant) or (
+                    self.architecture_variant == ARCHITECTURE_VARIANT_GENERIC
+                    and other.architecture_variant == ARCHITECTURE_VARIANT_ARM64_ORIN
+                )
+            else:
+                return (
+                    # self.os == other.os # already checked
+                    self.os_version == other.os_version
+                    and self.architecture == other.architecture
+                    and self.architecture_variant == other.architecture_variant
+                )
+
         else:
             return (
                 self.os == other.os

@@ -3,6 +3,7 @@ from unittest.mock import patch
 from csorchestrator.domain.context.context_os_architecture import (
     ARCHITECTURE_VARIANT_ARM64_ORIN,
     ARCHITECTURE_VARIANT_ARM64_XAVIER,
+    ARCHITECTURE_VARIANT_GENERIC,
     OS,
     Architecture,
     ContextOsArchitecture,
@@ -115,3 +116,35 @@ def test_context_os_architecture_can_be_executed_on():
 
     assert a1.can_be_executed_on(a2)
     assert not a1.can_be_executed_on(a3)
+
+
+# test can be executed on - orin special case
+def test_context_os_architecture_can_be_executed_on_orin():
+    host = ContextOsArchitecture(
+        os=OS.LINUX,
+        os_version=UbuntuVersions.UBUNTU_24_04.value,
+        architecture=Architecture.ARM64,
+        architecture_variant=ARCHITECTURE_VARIANT_ARM64_ORIN,
+    )
+    entry = ContextOsArchitecture(
+        os=OS.LINUX,
+        os_version=UbuntuVersions.UBUNTU_24_04.value,
+        architecture=Architecture.ARM64,
+        architecture_variant=ARCHITECTURE_VARIANT_GENERIC,
+    )
+    hostx64 = ContextOsArchitecture(
+        os=OS.LINUX,
+        os_version=UbuntuVersions.UBUNTU_24_04.value,
+        architecture=Architecture.X64,
+        architecture_variant=ARCHITECTURE_VARIANT_ARM64_ORIN,
+    )
+    host2204 = ContextOsArchitecture(
+        os=OS.LINUX,
+        os_version=UbuntuVersions.UBUNTU_22_04.value,
+        architecture=Architecture.ARM64,
+        architecture_variant=ARCHITECTURE_VARIANT_ARM64_ORIN,
+    )
+
+    assert entry.can_be_executed_on(host)
+    assert not entry.can_be_executed_on(hostx64)
+    assert not entry.can_be_executed_on(host2204)

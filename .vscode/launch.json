@@ -732,6 +732,16 @@
       "justMyCode": false
     },
     {
+      "name": "\ud83e\uddea tests/csorchestrator/context/test_detect_context_os_architecture \u2192 test_context_os_architecture_can_be_executed_on_orin",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/context/test_detect_context_os_architecture.py::test_context_os_architecture_can_be_executed_on_orin"
+      ],
+      "justMyCode": false
+    },
+    {
       "name": "\ud83e\uddea tests/csorchestrator/context/test_detect_context_os_architecture \u2192 test_detect_context_os_architecture_architecture_error",
       "type": "debugpy",
       "request": "launch",
