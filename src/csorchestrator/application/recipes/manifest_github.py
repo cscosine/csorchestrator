@@ -240,30 +240,54 @@ def create_steps_to_get_libs_from_manifest(
         if lib_name in manifest_loaded.headers_only_packages:
             headers_only = True
 
-        steps.append(
-            StepGetPrecompiledLibGithub(
-                name=f"Get Precompiled Lib {lib_name}",
-                description=f"get precompiled lib {lib_name} from github release",
-                base_url=manifest_description.base_url,
-                org=manifest_description.org,
-                git_repo=manifest_description.git_repo,
-                project_name=manifest_description.project_name,
-                project_version=manifest_description.project_version,
-                project_tag=manifest_description.release_tag,
-                lib_name=lib_name,
-                lib_version=version,
-                base_libs_dir=base_libs_dir,
-                headers_only=headers_only,
-                mapping_function=mapping_function,
-            )
+        # we cannot have the full lib name here,
+        # bc it get composed with the matrix specific entries (os, arch, compiler)
+        # let create a unique if made with project name, version and lib name and version
+        fe = DownloadGithubFileEntry(
+            base_url=manifest_description.base_url,
+            org=manifest_description.org,
+            git_repo=manifest_description.git_repo,
+            tag=manifest_description.release_tag,
+            asset_filename=manifest_description.project_name
+            + "-"
+            + manifest_description.project_version
+            + "-"
+            + lib_name
+            + "-"
+            + version,
         )
 
-    if phase_name is None:
-        phase_name = f"get libraries from {manifest_description.project_name} {manifest_description.project_version}"
+        report_tmp, to_continue = check_dowload_entry_duplicates_or_incompatibilities(
+            orchestrator,
+            fe,
+            skip_message="Skip add step to download library ",
+            error_message="Error preparing step to download library ",
+        )
+        report.append_report(report_tmp)
 
-    p = orchestrator.create_phase(phase_name)
-    for step in steps:
-        p.add_step(step)
+        if to_continue:
+            steps.append(
+                StepGetPrecompiledLibGithub(
+                    name=f"Get Precompiled Lib {lib_name}",
+                    description=f"get precompiled lib {lib_name} from github release",
+                    base_url=manifest_description.base_url,
+                    org=manifest_description.org,
+                    git_repo=manifest_description.git_repo,
+                    project_name=manifest_description.project_name,
+                    project_version=manifest_description.project_version,
+                    project_tag=manifest_description.release_tag,
+                    lib_name=lib_name,
+                    lib_version=version,
+                    base_libs_dir=base_libs_dir,
+                    headers_only=headers_only,
+                    mapping_function=mapping_function,
+                )
+            )
+
+    if len(steps) > 0:
+        p = orchestrator.create_phase(phase_name)
+        for step in steps:
+            p.add_step(step)
 
     return report
 
@@ -290,7 +314,7 @@ class DownloadGithubFileUniqueCopyCapability(OrchestratorConfigBaseCapability):
 
 
 def check_dowload_entry_duplicates_or_incompatibilities(
-    orchestrator: Orchestrator, entry: DownloadGithubFileEntry
+    orchestrator: Orchestrator, entry: DownloadGithubFileEntry, skip_message: str, error_message: str
 ) -> tuple[Report, bool]:
     # return bool True means continue to download
 
@@ -300,11 +324,11 @@ def check_dowload_entry_duplicates_or_incompatibilities(
         orchestrator.config_context.add_capability(capability, key=type(capability))
 
     if capability.has_entry(entry):
-        return Report().append_info(f"Skip download of {entry.to_string()}, already downloaded"), False
+        return Report().append_info(f"{skip_message} {entry.to_string()}, already done"), False
 
     not_compatible = capability.collect_incompatible_entries(entry)
     if len(not_compatible) > 0:
-        error_str = "Error downloading {fe.to_string()}, found incompatible entries already downloaded: "
+        error_str = f"{error_message} {entry.to_string()}, found incompatible entries: "
         for nc in not_compatible:
             error_str = error_str + nc.to_string()
 
@@ -358,7 +382,12 @@ def download_manifest_bundle(
         asset_filename=bundle_filename,
     )
 
-    report_tmp, to_continue = check_dowload_entry_duplicates_or_incompatibilities(orchestrator, fe)
+    report_tmp, to_continue = check_dowload_entry_duplicates_or_incompatibilities(
+        orchestrator,
+        fe,
+        skip_message="Skip download of manifest bundle",
+        error_message="Error preparing download of manifest bundle",
+    )
     report.append_report(report_tmp)
 
     if not to_continue:
@@ -430,7 +459,12 @@ def download_manifest(
         asset_filename=source_filename.as_posix(),
     )
 
-    report_tmp, to_continue = check_dowload_entry_duplicates_or_incompatibilities(orchestrator, fe)
+    report_tmp, to_continue = check_dowload_entry_duplicates_or_incompatibilities(
+        orchestrator,
+        fe,
+        skip_message="Skip download of manifest ",
+        error_message="Error preparing download of manifest ",
+    )
     report.append_report(report_tmp)
 
     if not to_continue:
