@@ -222,13 +222,13 @@ def release_creation_on_tag_config_to_githubwf(
     python_code = replace_template_variable(
         python_code,
         "dependencies",
-        repr(step.dependencies),
+        repr_dict_of_sets_sorted(step.dependencies),
     )
 
     python_code = replace_template_variable(
         python_code,
         "dependencies_dev",
-        repr(step.dependencies_dev),
+        repr_dict_of_sets_sorted(step.dependencies_dev),
     )
 
     python_lines = python_code.splitlines()
@@ -344,3 +344,12 @@ def release_creation_on_tag_config_execute_local(
         report.append_info(f"release manifest written to {str(output_manifest_filename)}")
 
     return report
+
+
+def repr_dict_of_sets_sorted(d: dict[str, set[str]]) -> str:
+    """repr of a dict of sets with the items of each set sorted: the same text on every run (set order is not)."""
+    items = []
+    for key, values in d.items():
+        values_repr = "{" + ", ".join(repr(v) for v in sorted(values)) + "}" if values else "set()"
+        items.append(f"{key!r}: {values_repr}")
+    return "{" + ", ".join(items) + "}"
