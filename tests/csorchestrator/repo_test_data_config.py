@@ -37,6 +37,6 @@ class RepoTestData:
     #          pytest [...]
     token_name: str = "ACTIONS_ORG_ACCESS"
     https_url_template: RepoUrlParts = RepoUrlParts(
-        "https://{token}@github.com/", "cscosine", "csOrchestratorTestRepo.git"
+        "https://x-access-token:{token}@github.com/", "cscosine", "csOrchestratorTestRepo.git"
     )
     ssh_url: RepoUrlParts = RepoUrlParts("git@github.com:", "cscosine", "csOrchestratorTestRepo.git")
