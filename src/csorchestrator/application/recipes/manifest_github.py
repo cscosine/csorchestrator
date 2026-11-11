@@ -1,12 +1,8 @@
 import importlib
-import os
-import tarfile
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TypeAlias, assert_never
-from urllib import request
-from urllib.error import HTTPError, URLError
 
 from csorchestrator.domain.context.context_os_architecture import (
     OS,
@@ -27,13 +23,16 @@ from csorchestrator.frontend.local_execution.step_utils import (
     StepExecuteOnlyOn,
     StepExecuteOnlyOncePerMatrix,
 )
+from csorchestrator.frontend.step.github_release_download import (
+    DownloadGithubFileEntry,
+    download_and_extract_github_release_asset,
+    download_github_release_asset,
+)
 from csorchestrator.frontend.step.step_custom_command import StepInstallAptPackages
 from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
-    DownloadGithubFileEntry,
     MappingFunction,
     StepGetPrecompiledLibGithub,
     compose_mapping_function,
-    create_github_release_download_url,
 )
 from csorchestrator.frontend.step.step_get_repository import StepGetRepositoryGitHub
 from csorchestrator.portable.release_manifest import ReleaseManifest
@@ -372,7 +371,6 @@ def download_manifest_bundle(
     extract_dir = extract_creation_res.value
 
     bundle_filename = Path(bundle_file_name).name
-    target_filename = extract_dir / bundle_filename
 
     fe = DownloadGithubFileEntry(
         base_url=manifest_description.base_url,
@@ -393,42 +391,7 @@ def download_manifest_bundle(
     if not to_continue:
         return report
 
-    download_url = create_github_release_download_url(fe)
-    report.append_info("download URL " + download_url + " to " + target_filename.as_posix())
-
-    try:
-        request.urlretrieve(download_url, target_filename)
-    except HTTPError as e:
-        report.append_error(f"HTTP error: {e.code} - {e.reason}")
-        return report
-
-    except URLError as e:
-        report.append_error(f"Network error: {e.reason}")
-        return report
-
-    # Check file exists and is not empty
-    if not os.path.exists(target_filename):
-        report.append_error("Download failed: file does not exist")
-        return report
-
-    if os.path.getsize(target_filename) == 0:
-        report.append_error("Download failed: file is empty")
-        return report
-
-    if not tarfile.is_tarfile(target_filename):
-        report.append_error("Downloaded bundle is not a valid tar archive")
-        return report
-
-    try:
-        with tarfile.open(target_filename, "r:gz") as tar:
-            tar.extractall(extract_dir)
-    except tarfile.ReadError:
-        report.append_error(f"Extraction failed: corrupted tar.gz file {target_filename}")
-        return report
-
-    # Delete archive
-    os.remove(target_filename)
-
+    report.append_report(download_and_extract_github_release_asset(fe, extract_dir))
     return report
 
 
@@ -470,27 +433,8 @@ def download_manifest(
     if not to_continue:
         return OptionalManifestPathWithReport.create_report(report)
 
-    download_url = create_github_release_download_url(fe)
-    report.append_info("download URL " + download_url + " to " + target_filename.as_posix())
-
-    # download
-    try:
-        request.urlretrieve(download_url, target_filename)
-    except HTTPError as e:
-        report.append_error(f"HTTP error: {e.code} - {e.reason}")
-        return OptionalManifestPathWithReport.create_report(report)
-
-    except URLError as e:
-        report.append_error(f"Network error: {e.reason}")
-        return OptionalManifestPathWithReport.create_report(report)
-
-    # Check file exists and is not empty
-    if not os.path.exists(target_filename):
-        report.append_error("Download failed: file does not exist")
-        return OptionalManifestPathWithReport.create_report(report)
-
-    if os.path.getsize(target_filename) == 0:
-        report.append_error("Download failed: file is empty")
+    report.append_report(download_github_release_asset(fe, target_filename))
+    if report.has_errors():
         return OptionalManifestPathWithReport.create_report(report)
 
     return OptionalManifestPathWithReport.create_result_and_report(target_filename, report)

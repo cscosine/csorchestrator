@@ -13,8 +13,10 @@ from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
 from csorchestrator.foundation.git.resolve_url import RepoUrlParts
 from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
 from csorchestrator.frontend.local_execution.step_utils import StepExecuteOnlyOncePerMatrix
+from csorchestrator.frontend.step.github_release_download import DownloadGithubFileEntry
 from csorchestrator.frontend.step.step_cmake_command import StepCMakeWorkflow
 from csorchestrator.frontend.step.step_create_archives import StepCreateArchives
+from csorchestrator.frontend.step.step_get_release_archive_github import StepGetReleaseArchiveGithub
 from csorchestrator.frontend.step.step_get_repository import (
     StepGetRepositoryExtraAccessToken,
     StepGetRepositoryExtraDepthOne,
@@ -44,9 +46,13 @@ def checkout_repos(
     repo_ref_dict: ReposRefDict | None = None,
     checkout_self: bool = True,
     repo_access_token: str | None = None,
+    release_archive_list: list[DownloadGithubFileEntry] | None = None,
 ) -> None:
     if repo_ref_dict is None:
         repo_ref_dict = {}
+
+    if release_archive_list is None:
+        release_archive_list = []
 
     p = orchestrator.create_phase(checkout_phase_name)
 
@@ -57,6 +63,17 @@ def checkout_repos(
                 name="Repo git self-checkout",
                 description="Checkout self repository",
             )
+        )
+
+    # release archives (e.g. csCMake), extracted into base_target_dir
+    for archive in release_archive_list:
+        p.add_step(
+            StepGetReleaseArchiveGithub(
+                name=f"{archive.git_repo} {archive.tag} release",
+                description=f"Download and extract {archive.asset_filename} of {archive.org}/{archive.git_repo}",
+                archive=archive,
+                extract_dir=base_target_dir.as_posix(),
+            ).add_extra(StepExecuteOnlyOncePerMatrix())
         )
 
     for repo, repo_ref in repo_ref_dict.items():
@@ -192,6 +209,7 @@ def checkout_build_and_archive_repos(
     repos_auto_search_list: list[str] | _All | None = ALL,
     repos_config_file_list: list[CMakeConfigPackageVersionGrep] | None = None,
     repos_version_list: list[PackageVersion] | None = None,
+    release_archive_list: list[DownloadGithubFileEntry] | None = None,
 ) -> None:
     if repo_ref_build_publish_config_dict is None:
         repo_ref_build_publish_config_dict = {}
@@ -203,6 +221,7 @@ def checkout_build_and_archive_repos(
         repo_ref_dict=extract_repo_ref_dict(repo_ref_build_publish_config_dict),
         checkout_self=checkout_self,
         repo_access_token=repo_access_token,
+        release_archive_list=release_archive_list,
     )
 
     build_repos(

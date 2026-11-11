@@ -1,7 +1,11 @@
 from pathlib import Path
 
 from csorchestrator.application.factory.factory import create_orchestrator_factory_all_supported_cases
-from csorchestrator.application.recipes.checkout_build import ALL, _All, checkout_build_and_archive_repos
+from csorchestrator.application.recipes.checkout_build import (
+    ALL,
+    _All,
+    checkout_build_and_archive_repos,
+)
 from csorchestrator.application.recipes.repos_config import (
     RepoRefBuildPublishConfigDict,
     extract_repo_publish_config_dict,
@@ -13,6 +17,7 @@ from csorchestrator.domain.context.context_os_architecture_compiler_generator im
 from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
 from csorchestrator.domain.orchestrator.workflow_config import Cron, DayOfWeek, WorkflowConfig, WorkflowTrigger
 from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
+from csorchestrator.frontend.step.github_release_download import DownloadGithubFileEntry
 from csorchestrator.frontend.step.release_creation import ReleaseCreationOnTagConfig
 from csorchestrator.portable.package_version import CMakeConfigPackageVersionGrep, PackageVersion
 from csorchestrator.portable.release_manifest import ReposPublishConfigDict
@@ -55,6 +60,7 @@ def create_default_orchestrator_and_default_checkout_build_upload(
     repos_auto_search_list: list[str] | _All | None = ALL,
     repos_config_file_list: list[CMakeConfigPackageVersionGrep] | None = None,
     repos_version_list: list[PackageVersion] | None = None,
+    release_archive_list: list[DownloadGithubFileEntry] | None = None,
 ) -> Orchestrator:
     if repo_ref_build_publish_config_dict is None:
         repo_ref_build_publish_config_dict = {}
@@ -97,6 +103,7 @@ def create_default_orchestrator_and_default_checkout_build_upload(
         repos_auto_search_list=repos_auto_search_list,
         repos_config_file_list=repos_config_file_list,
         repos_version_list=repos_version_list,
+        release_archive_list=release_archive_list,
     )
     return o
 

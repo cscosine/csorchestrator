@@ -1,13 +1,8 @@
-import os
 import re
-import tarfile
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from urllib import request
-from urllib.error import HTTPError, URLError
-from urllib.parse import urljoin
 
 from csorchestrator.domain.context.context_os_architecture_compiler_generator import (
     ContextOsArchitectureCompilerGenerator,
@@ -30,7 +25,6 @@ from csorchestrator.frontend.github_workflow_translation.github_workflow_matrix_
     create_header_only_variant_string_github_matrix,
 )
 from csorchestrator.frontend.github_workflow_translation.github_workflow_steps_translations import (
-    StepGitHubAction,
     StepRunCommand,
 )
 from csorchestrator.frontend.github_workflow_translation.matrix_execution_context import (
@@ -45,6 +39,11 @@ from csorchestrator.frontend.local_execution.context_local_execution import (
 )
 from csorchestrator.frontend.local_execution.orchestrator_visitor_local_executor import (
     StepCapabilityLocalExecution,
+)
+from csorchestrator.frontend.step.github_release_download import (
+    DownloadGithubFileEntry,
+    download_and_extract_github_release_asset,
+    github_release_download_and_extract_steps,
 )
 from csorchestrator.frontend.step.step_get_repository import StepGetRepositoryGitHub
 from csorchestrator.portable.release_manifest import create_archive_filename
@@ -99,40 +98,6 @@ def compose_mapping_function(
 
 
 @dataclass
-class DownloadGithubFileEntry:
-    base_url: str
-    org: str
-    git_repo: str
-    tag: str
-    asset_filename: str
-
-    def to_string(self) -> str:
-        return urljoin(
-            self.base_url,
-            "/".join([self.org, self.git_repo, self.tag, self.asset_filename]),
-        )
-
-    def is_equal(self, other: "DownloadGithubFileEntry") -> bool:
-        return (
-            self.base_url == other.base_url
-            and self.org == other.org
-            and self.git_repo == other.git_repo
-            and self.tag == other.tag
-            and self.asset_filename == other.asset_filename
-        )
-
-    def is_incompatible(self, other: "DownloadGithubFileEntry") -> bool:
-        return (
-            self.base_url == other.base_url
-            and self.org == other.org
-            and self.git_repo == other.git_repo
-            and self.asset_filename == other.asset_filename
-            # but on different tag
-            and self.tag != other.tag
-        )
-
-
-@dataclass
 class StepGetPrecompiledLibGithub(StepBase):
     base_url: str
     org: str
@@ -160,17 +125,6 @@ class StepGetPrecompiledLibGithub(StepBase):
 
     # TODO for private repo, will need to use API url and a api request to download, using a toke,
     # with keyring in local and token in github
-
-
-def create_github_release_download_url(
-    entry: DownloadGithubFileEntry,
-) -> str:
-    """Create the download URL of an asset published in a GitHub release."""
-
-    return urljoin(
-        entry.base_url,
-        "/".join([entry.org, entry.git_repo, "releases", "download", entry.tag, entry.asset_filename]),
-    )
 
 
 def execute_step_get_precompiled_lib(
@@ -223,55 +177,16 @@ def execute_step_get_precompiled_lib(
         lib_name=step.lib_name,
         lib_version=step.lib_version,
     )
-    source_filename = filename
-    target_filename = target_dir / filename
 
     fe = DownloadGithubFileEntry(
         base_url=step.base_url,
         org=step.org,
         git_repo=step.git_repo,
         tag=step.project_tag,
-        asset_filename=source_filename,
+        asset_filename=filename,
     )
 
-    download_url = create_github_release_download_url(fe)
-    report.append_info("download URL " + download_url + " to " + target_filename.as_posix())
-
-    # download
-    try:
-        request.urlretrieve(download_url, target_filename)
-    except HTTPError as e:
-        report.append_error(f"HTTP error: {e.code} - {e.reason}")
-        return report
-
-    except URLError as e:
-        report.append_error(f"Network error: {e.reason}")
-        return report
-
-    # Check file exists and is not empty
-    if not os.path.exists(target_filename):
-        report.append_error("Download failed: file does not exist")
-        return report
-
-    if os.path.getsize(target_filename) == 0:
-        report.append_error("Download failed: file is empty")
-        return report
-
-    # extract
-    if not tarfile.is_tarfile(target_filename):
-        report.append_error("Downloaded file is not a valid tar archive")
-        return report
-
-    try:
-        with tarfile.open(target_filename, "r:gz") as tar:
-            tar.extractall(target_dir)
-    except tarfile.ReadError:
-        report.append_error("Extraction failed: corrupted tar.gz file")
-        return report
-
-    # Delete archive
-    os.remove(target_filename)
-
+    report.append_report(download_and_extract_github_release_asset(fe, target_dir))
     return report
 
 
@@ -316,20 +231,7 @@ def step_get_precompiled_lib_to_githubwf(
             lib_version=step.lib_version,
         )
 
-        steps.append(
-            StepGitHubAction(
-                name=step.name + " download tar.gz",
-                uses="robinraju/release-downloader@v1.13",
-                with_list={
-                    "repository": f"{step.org}/{step.git_repo}",
-                    "tag": f"{step.project_tag}",
-                    "fileName": f"{src_filename}",
-                    "out-file-path": f"{input_context_string.as_posix()}",
-                },
-            )
-        )
-
-        tarfile_path = input_context_string / f"{src_filename}"
+        asset_filename = src_filename
 
     else:
         # mapping needs two steps, one to prepare a dict of valid entries corresponding to execution matrix id,
@@ -401,31 +303,18 @@ def step_get_precompiled_lib_to_githubwf(
             )
         )
 
-        steps.append(
-            StepGitHubAction(
-                name=step.name + " download tar.gz",
-                uses="robinraju/release-downloader@v1.13",
-                with_list={
-                    "repository": f"{step.org}/{step.git_repo}",
-                    "tag": f"{step.project_tag}",
-                    "fileName": f"${{{{ steps.{step_id}.outputs.{filename_variable} }}}}",
-                    "out-file-path": f"{input_context_string.as_posix()}",
-                },
-            )
-        )
+        asset_filename = f"${{{{ steps.{step_id}.outputs.{filename_variable} }}}}"
 
-        tarfile_path = input_context_string / f"${{{{ steps.{step_id}.outputs.{filename_variable} }}}}"
-
-    # finally, one step to extract the archive
-
-    steps.append(
-        StepRunCommand(
-            name=step.name + " extract tar.gz",
-            shell_type="bash",
-            run=[
-                f"tar -xzf {tarfile_path.as_posix()} -C {input_context_string.as_posix()}",
-                f"rm -f {tarfile_path.as_posix()}",
-            ],
-        )
+    # finally, download and extract the archive
+    steps += github_release_download_and_extract_steps(
+        name=step.name,
+        entry=DownloadGithubFileEntry(
+            base_url=step.base_url,
+            org=step.org,
+            git_repo=step.git_repo,
+            tag=step.project_tag,
+            asset_filename=asset_filename,
+        ),
+        target_dir=input_context_string.as_posix(),
     )
     return OptionalListGithubStepsWithReport.create_result_and_report(steps, Report())
