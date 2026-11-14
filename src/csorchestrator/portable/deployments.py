@@ -254,11 +254,33 @@ def _run_in(name: str, config: str, folder: Path, run: DeploymentRun, log: Log) 
     environment = clean_environment() if run.clean_environment else dict(os.environ)
     environment.update(run.environment)
     log(f"{label}: $ {' '.join(command)}")
+    _no_error_dialogs()
     try:
         result = subprocess.run(command, env=environment, timeout=run.timeout_seconds, check=False)
     except subprocess.TimeoutExpired:
+        _log_files(folder, log)
         return f"{label}: still running after {run.timeout_seconds} s"
     if result.returncode != run.expect_exit_code:
+        _log_files(folder, log)
         return f"{label}: exit code {result.returncode}, expected {run.expect_exit_code}"
     log(f"{label}: exit code {result.returncode}, as expected")
     return None
+
+
+def _no_error_dialogs() -> None:
+    """Windows: no error dialog for the processes started from now on (inherited): a crash or a DLL not found ends
+    them with an exit code, instead of a dialog waiting for a click (on a machine without a user, until the
+    timeout)."""
+    if sys.platform == "win32":
+        import ctypes  # noqa: PLC0415 (Windows only)
+
+        sem_failcriticalerrors, sem_nogpfaulterrorbox, sem_noopenfileerrorbox = 0x0001, 0x0002, 0x8000
+        ctypes.windll.kernel32.SetErrorMode(  # type: ignore[attr-defined,unused-ignore]
+            sem_failcriticalerrors | sem_nogpfaulterrorbox | sem_noopenfileerrorbox
+        )
+
+
+def _log_files(folder: Path, log: Log) -> None:
+    """Log the files of the deployment in folder (a failed run: what it ships)."""
+    files = sorted(path.relative_to(folder).as_posix() for path in folder.rglob("*") if path.is_file())
+    log(f"the files of the deployment ({len(files)}): {', '.join(files)}")

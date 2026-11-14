@@ -198,10 +198,13 @@ def test_run_deployment_fails_without_its_archive(tmp_path: Path) -> None:
     assert "deployment demo (Release): no archive in" in errors[0]
 
 
-def test_run_deployment_fails_on_another_exit_code(tmp_path: Path) -> None:
+def test_run_deployment_fails_on_another_exit_code(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Another exit code fails; the files of the deployment logged."""
     errors = _run(tmp_path, "import sys; sys.exit(1)")
 
     assert errors == ["deployment demo (Release): exit code 1, expected 0"]
+    out = capsys.readouterr().out
+    assert "the files of the deployment" in out and "bin/app" in out
     assert _run(tmp_path / "expected", "import sys; sys.exit(1)", expect_exit_code=1) == []
 
 
