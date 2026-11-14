@@ -175,8 +175,8 @@ class StepRunDeployment(StepBase):
     deployment lists, e.g. a smoke run of the deployed application. The command per OS (an OS without: not run);
     ``clean_environment``: nothing to find libraries with (system folders only on PATH);
     ``install_system_requirements``: in CI on Linux, ``apt-get install`` the packages of ``system-requirements.txt``
-    first (never locally). Another exit code than ``expect_exit_code``, or a run longer than ``timeout_seconds``,
-    fails."""
+    first (never locally); ``environment``: variables set on top (e.g. ``QT_OPENGL=software`` on a machine without
+    GPU). Another exit code than ``expect_exit_code``, or a run longer than ``timeout_seconds``, fails."""
 
     deployment: str
     command: dict[OS, list[str]]
@@ -187,6 +187,7 @@ class StepRunDeployment(StepBase):
     install_system_requirements: bool = False
     expect_exit_code: int = 0
     timeout_seconds: float = 120
+    environment: dict[str, str] = field(default_factory=dict)
     _commands_by_os: dict[str, list[str]] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -208,6 +209,7 @@ def execute_step_run_deployment(step: StepRunDeployment, context: ContextLocalEx
         install_system_requirements=False,  # never sudo apt-get on a developer machine
         expect_exit_code=step.expect_exit_code,
         timeout_seconds=step.timeout_seconds,
+        environment=step.environment,
     )
     variant = _local_variant(context)
     description = context.orchestrator_description
@@ -243,6 +245,7 @@ def step_run_deployment_to_githubwf(
             "install_system_requirements": repr(step.install_system_requirements),
             "expect_exit_code": repr(step.expect_exit_code),
             "timeout_seconds": repr(float(step.timeout_seconds)),
+            "environment": repr(step.environment),
         },
     )
     # PYTHONPATH: the template imports csorchestratorsdk, copied at the root of the checkout of the project

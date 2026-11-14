@@ -1472,6 +1472,16 @@
       "justMyCode": false
     },
     {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_run_deployment_with_variables_set_on_top",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_run_deployment_with_variables_set_on_top"
+      ],
+      "justMyCode": false
+    },
+    {
       "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_system_packages",
       "type": "debugpy",
       "request": "launch",

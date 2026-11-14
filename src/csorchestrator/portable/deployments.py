@@ -18,7 +18,7 @@ import tarfile
 import tempfile
 import zipfile
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 # the messages (errors are returned): print by default; csorchestrator passes its report locally
@@ -210,6 +210,7 @@ class DeploymentRun:
     install_system_requirements: bool = False  # Linux: apt-get install the packages of system-requirements.txt first
     expect_exit_code: int = 0
     timeout_seconds: float = 120
+    environment: dict[str, str] = field(default_factory=dict)  # set on top (e.g. QT_OPENGL=software)
 
 
 def run_deployment(
@@ -250,7 +251,8 @@ def _run_in(name: str, config: str, folder: Path, run: DeploymentRun, log: Log) 
     command = [part.replace("{folder}", folder.as_posix()) for part in run.command]
     if shutil.which(command[0]) is None and not Path(command[0]).is_file():
         return f"{label}: {command[0]} not found"
-    environment = clean_environment() if run.clean_environment else None
+    environment = clean_environment() if run.clean_environment else dict(os.environ)
+    environment.update(run.environment)
     log(f"{label}: $ {' '.join(command)}")
     try:
         result = subprocess.run(command, env=environment, timeout=run.timeout_seconds, check=False)

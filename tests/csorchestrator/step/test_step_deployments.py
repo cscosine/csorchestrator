@@ -185,6 +185,12 @@ def test_run_deployment_extracted_from_its_archive_with_a_clean_environment(
     assert _run(tmp_path, code) == []
 
 
+def test_run_deployment_with_variables_set_on_top(tmp_path: Path) -> None:
+    code = "import os, sys; sys.exit(0 if os.environ.get('QT_OPENGL') == 'software' else 3)"
+
+    assert _run(tmp_path, code, environment={"QT_OPENGL": "software"}) == []
+
+
 def test_run_deployment_fails_without_its_archive(tmp_path: Path) -> None:
     errors = _run(tmp_path, "import sys; sys.exit(0)", archive=False)
 
@@ -253,6 +259,7 @@ def test_github_step_of_a_run() -> None:
         build_config=BuildConfig.RELEASE,
         archives_dir=Path("workspace/deploy-archives"),
         install_system_requirements=True,
+        environment={"QT_OPENGL": "software"},
     )
 
     steps = step_run_deployment_to_githubwf(step, _job()).result_or([])
@@ -265,6 +272,7 @@ def test_github_step_of_a_run() -> None:
     assert "'linux': ['xvfb-run', '-a', '{folder}/bin/app', '--smoke']" in code
     assert "'windows': ['{folder}/bin/app.exe']" in code
     assert "install_system_requirements = True" in code
+    assert "environment = {'QT_OPENGL': 'software'}" in code
 
 
 def test_the_release_attaches_the_zip_archives() -> None:

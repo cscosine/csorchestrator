@@ -16,6 +16,7 @@ clean_environment = True
 install_system_requirements = False
 expect_exit_code = 0
 timeout_seconds = 120.0
+environment = cast(dict[str, str], {})
 
 os_name = "windows" if sys.platform == "win32" else "macos" if sys.platform == "darwin" else "linux"
 if os_name not in commands:
@@ -32,6 +33,7 @@ errors_list = run_deployment(
         install_system_requirements=install_system_requirements,
         expect_exit_code=expect_exit_code,
         timeout_seconds=timeout_seconds,
+        environment=environment,
     ),
     DeploymentArchives(Path(archives_dir), project_name, project_name_and_version, variant),
 )
