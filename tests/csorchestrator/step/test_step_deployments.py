@@ -62,7 +62,8 @@ def _deployment_folder(folder: Path) -> None:
     (folder / "bin" / "app").write_text("app\n", encoding="utf-8")
     (folder / "lib").mkdir()
     (folder / "lib" / "libx.so.1.0").write_text("x\n", encoding="utf-8")
-    (folder / "lib" / "libx.so.1").symlink_to("libx.so.1.0")
+    if sys.platform != "win32":  # a .zip on Windows: no symlinks
+        (folder / "lib" / "libx.so.1").symlink_to("libx.so.1.0")
 
 
 def test_cmake_configs_of_build_config() -> None:
@@ -129,7 +130,8 @@ def test_create_deployment_archives(tmp_path: Path) -> None:
         members = {m.name: m for m in archive.getmembers()}
     base = f"app-1.0.0-{VARIANT}-demo-Release"
     assert f"{base}/bin/app" in members
-    assert members[f"{base}/lib/libx.so.1"].issym()
+    if sys.platform != "win32":
+        assert members[f"{base}/lib/libx.so.1"].issym()
 
     errors = create_deployment_archives(build / "app", "release", "app", "app-1.0.0", VARIANT, out, use_zip=True)
 
@@ -170,12 +172,14 @@ def _run(tmp_path: Path, code: str, archive: bool = True, **kwargs: object) -> l
 def test_run_deployment_extracted_from_its_archive_with_a_clean_environment(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """{folder}: the deployment extracted from its archive, elsewhere than its folder (symlinks kept); the environment
-    of the caller not passed (clean_environment)."""
+    """{folder}: the deployment extracted from its archive, elsewhere than its folder (symlinks kept, Linux and
+    macOS); the environment of the caller not passed (clean_environment)."""
     monkeypatch.setenv("CSORCHESTRATOR_TEST_VARIABLE", "1")
-    deploy = (tmp_path / "deploy").as_posix()
-    code = "import os, sys; folder = sys.argv[1]; sys.exit(0 if os.path.isfile(folder + '/bin/app') and "
-    code += f"os.path.islink(folder + '/lib/libx.so.1') and not folder.startswith({deploy!r}) and "
+    deploy = str((tmp_path / "deploy").resolve())
+    symlink = "os.path.islink(folder + '/lib/libx.so.1')" if sys.platform != "win32" else "True"
+    code = "import os, sys; from pathlib import Path; folder = sys.argv[1]; "
+    code += f"sys.exit(0 if os.path.isfile(folder + '/bin/app') and {symlink} and "
+    code += f"not str(Path(folder).resolve()).startswith({deploy!r}) and "
     code += "'CSORCHESTRATOR_TEST_VARIABLE' not in os.environ else 3)"
 
     assert _run(tmp_path, code) == []
