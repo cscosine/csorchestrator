@@ -43,3 +43,56 @@ Today (2026-11-10) csCMake has 42 variants; csorchestrator lacks Ubuntu 26.04 an
 
 Later: follow `variants.json` instead of keeping the copy (generate the matrix from it, or keep the copy and let the
 drift test catch every change).
+
+## Future: read what the build declares, instead of repeating it
+
+csCMake (`dev`, deployments) writes `cs-deployments.json` in the top build folder at configure time: each deployment
+with its build target (`cs_deploy_<name>`), configurations, targets and output folder per configuration. The normal
+install makes the deployments (in their configurations), so the workflow presets already make them; csorchestrator
+will read the file (at run time in the GitHub job, a Python template step like `create_archives`: the file exists only
+after the configure) to:
+
+- check that each deployment was made in the configurations of the build it lists (its folder exists), and fail
+  otherwise (e.g. a Debug-only run of a Release deployment);
+- archive and upload each deployment folder (`<project>-<version>-<variant>-<name>-<config>`).
+
+Deployments without csCMake (or without the file): a `Deployment` dataclass (name, configs, build target or install
+component, folder per configuration) that the project script fills in by hand; `cs-deployments.json` loads into the
+same class, and the steps after it are shared.
+
+The same idea for build and install, later: a csCMake-generated description of the build (configurations, targets,
+components, install prefix, the installed package and version) that csorchestrator reads, instead of deriving it
+(e.g. `StepGetVersionsFromCMakeConfigPackageVersion` grepping the installed `ConfigVersion.cmake`, the install folders
+assumed by `StepCreateArchives`). Alternative to evaluate: CMake's own File API (`.cmake/api/v1`, codemodel and
+installers), no csCMake code but more parsing.
+
+## Future: run the deployments in CI (a step the project configures)
+
+The deployments made by the install (`workspace/deploy/<variant>/<project>/<name>-<config>`, csCMake `cs_deployment`)
+can be run in CI, to prove they work on a machine without the build. A step the project adds in its script, e.g.:
+
+```python
+StepRunDeployment(
+    deployment="app",                       # the folder from the matrix values (variant, config): cs-deployments.json
+    command={                               # per OS; {folder} = the folder of the deployment
+        "linux": ["xvfb-run", "-a", "{folder}/bin/csImgTracker", "--smoke"],
+        "windows": ["{folder}/bin/csImgTracker.exe", "--smoke"],
+        "macos": ["{folder}/bin/csImgTracker", "--smoke"],
+    },
+    environment="clean",                    # env -i (Linux, macOS), PATH = System32 only (Windows)
+    expect_exit_code=0,                     # anything else (1, a crash) fails the job
+    timeout_seconds=120,
+)
+```
+
+- Done (`dev`): `StepCreateDeploymentArchives` (recipe `create_and_upload_deployments`: archives `.tar.gz`, `.zip` on
+  Windows, uploaded as artifacts, attached to the release) and `StepRunDeployment` (the deployment extracted from its
+  archive in a temporary folder, outside the workspace, run with a clean environment; `install_system_requirements`
+  in CI on Linux). Next: csImgTracker uses them, its CI on Linux then Windows.
+- The configurations: the ones the deployment lists (`cs-deployments.json`) that the build of the job built.
+- Linux, a later mode: a bare container (`ubuntu:<release>`), `apt install` of the line of `system-requirements.txt`,
+  then the command: proves the deployment and its list of system requirements.
+- Windows: a desktop session on the runners; OpenGL without GPU: Qt's `opengl32sw.dll` shipped, `QT_OPENGL=software`.
+- macOS: a desktop session on the runners (to confirm with a first run); OpenGL through the software renderer.
+- csImgTracker has `--smoke` (start, check the OpenGL views got a context, exit 0; else 1); plain `offscreen` has no
+  OpenGL context and csImgTracker crashes there: `xvfb-run` on Linux.

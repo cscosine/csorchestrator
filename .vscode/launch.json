@@ -1342,6 +1342,156 @@
       "justMyCode": false
     },
     {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_cmake_configs_of_build_config",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_cmake_configs_of_build_config"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_create_deployment_archives",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_create_deployment_archives"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_create_deployment_archives_fails_on_a_missing_deployment",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_create_deployment_archives_fails_on_a_missing_deployment"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_find_deployment_folders",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_find_deployment_folders"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_find_deployment_folders_fails_on_a_missing_folder",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_find_deployment_folders_fails_on_a_missing_folder"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_find_deployment_folders_ignores_configurations_not_built",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_find_deployment_folders_ignores_configurations_not_built"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_github_step_of_a_run",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_github_step_of_a_run"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_github_steps_of_the_archives",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_github_steps_of_the_archives"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_run_deployment_extracted_from_its_archive_with_a_clean_environment",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_run_deployment_extracted_from_its_archive_with_a_clean_environment"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_run_deployment_fails_on_a_timeout",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_run_deployment_fails_on_a_timeout"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_run_deployment_fails_on_an_unknown_deployment",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_run_deployment_fails_on_an_unknown_deployment"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_run_deployment_fails_on_another_exit_code",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_run_deployment_fails_on_another_exit_code"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_run_deployment_fails_without_its_archive",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_run_deployment_fails_without_its_archive"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_system_packages",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_system_packages"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_the_release_attaches_the_zip_archives",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_the_release_attaches_the_zip_archives"
+      ],
+      "justMyCode": false
+    },
+    {
       "name": "\ud83e\uddea tests/csorchestrator/step/test_step_get_repository \u2192 test_execute_step_get_repository_success[063ee5ddc414553e32b234170542a717cfe9d087-False]",
       "type": "debugpy",
       "request": "launch",

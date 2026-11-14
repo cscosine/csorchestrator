@@ -157,7 +157,8 @@ class CreateGitHubRelease(GithubStepInterface):
     additional_files_list: list[Path]
 
     def to_dict(self) -> dict[str, Any]:
-        extension_files = [f"{self.artifacts_folder}/**/*.tar.gz"]
+        # the archives of the artifacts: the packages, the deployments (.zip on Windows)
+        extension_files = [f"{self.artifacts_folder}/**/*.tar.gz", f"{self.artifacts_folder}/**/*.zip"]
         for f in self.additional_files_list:
             extension_files.append(f"{f.as_posix()}")
 

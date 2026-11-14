@@ -16,6 +16,7 @@ from csorchestrator.frontend.local_execution.step_utils import StepExecuteOnlyOn
 from csorchestrator.frontend.step.github_release_download import DownloadGithubFileEntry
 from csorchestrator.frontend.step.step_cmake_command import StepCMakeWorkflow
 from csorchestrator.frontend.step.step_create_archives import StepCreateArchives
+from csorchestrator.frontend.step.step_deployments import StepCreateDeploymentArchives
 from csorchestrator.frontend.step.step_get_release_archive_github import StepGetReleaseArchiveGithub
 from csorchestrator.frontend.step.step_get_repository import (
     StepGetRepositoryExtraAccessToken,
@@ -191,6 +192,28 @@ def create_and_upload_artifacts(
             name="Upload Artifacts",
             description="Upload Artifacts with libs and versions",
             base_install_dir=base_install_dir,
+        )
+    )
+
+
+def create_and_upload_deployments(
+    orchestrator: Orchestrator,
+    base_build_dir: Path,
+    build_config: BuildConfig,
+    output_dir: Path,
+    phase_name: str = "Create and Upload Deployments",
+) -> None:
+    """Archive the deployments (csCMake ``cs_deployment``) the install of the builds made, for the configurations of
+    ``build_config`` (the one of ``build_repos``), in ``output_dir``; in GitHub, uploaded as artifacts (attached to the
+    release by the release job)."""
+    p = orchestrator.create_phase(phase_name)
+    p.add_step(
+        StepCreateDeploymentArchives(
+            name="Create Deployment Archives",
+            description="Archive the deployments made by the install",
+            base_build_dir=base_build_dir,
+            build_config=build_config,
+            output_dir=output_dir,
         )
     )
 
