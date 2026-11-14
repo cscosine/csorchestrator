@@ -96,3 +96,6 @@ StepRunDeployment(
 - macOS: a desktop session on the runners (to confirm with a first run); OpenGL through the software renderer.
 - csImgTracker has `--smoke` (start, check the OpenGL views got a context, exit 0; else 1); plain `offscreen` has no
   OpenGL context and csImgTracker crashes there: `xvfb-run` on Linux.
+- A smoke option of an application should end its process right after the check (e.g. `std::_Exit`, the output
+  flushed): some software OpenGL stacks hang at the teardown (Mesa llvmpipe on Windows, its threads at the unload of
+  its DLL), and a hung run only shows as a timeout of the step.
