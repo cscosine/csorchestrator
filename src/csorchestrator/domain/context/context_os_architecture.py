@@ -28,6 +28,15 @@ UBUNTU_STRING_PREFIX = "ubuntu"
 class UbuntuVersions(Enum):
     UBUNTU_22_04 = UBUNTU_STRING_PREFIX + "22.04"
     UBUNTU_24_04 = UBUNTU_STRING_PREFIX + "24.04"
+    UBUNTU_26_04 = UBUNTU_STRING_PREFIX + "26.04"
+
+
+MACOS_STRING_PREFIX = "macos"
+
+
+class MacOSVersions(Enum):
+    MACOS_15 = MACOS_STRING_PREFIX + "15"
+    MACOS_26 = MACOS_STRING_PREFIX + "26"
 
 
 class Architecture(Enum):
@@ -135,8 +144,9 @@ def detect_os() -> Expected[tuple[OS, str], str]:
                 return Expected[tuple[OS, str], str].make_error(f"Unsupported linux with /etc/os-release: {content}")
 
     if system == OS_PLATFORM_MACOS:
-        version = platform.mac_ver()[0]
-        return Expected[tuple[OS, str], str].make_value((OS.MACOS, VERSION_STRING_PREFIX + version))
+        # the major version, as the csCMake variants: 15.5 -> macos15
+        version = platform.mac_ver()[0].split(".")[0]
+        return Expected[tuple[OS, str], str].make_value((OS.MACOS, MACOS_STRING_PREFIX + version))
 
     return Expected[tuple[OS, str], str].make_error(f"Unsupported OS: {system}")
 

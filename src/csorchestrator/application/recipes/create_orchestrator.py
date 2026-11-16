@@ -49,6 +49,7 @@ def create_default_orchestrator_and_default_checkout_build_upload(
     schedule: Cron | None = None,
     artifacts_dir: str = "artifacts",
     populate_default_matrix: bool = True,
+    additional_matrix_list: list[ContextOsArchitectureCompilerGenerator] | None = None,
     additional_files_list: list[Path] | None = None,
     output_bundle_file_name: Path | None = None,
     checkout_phase_name: str = "Repos Update",
@@ -85,6 +86,7 @@ def create_default_orchestrator_and_default_checkout_build_upload(
         schedule=schedule,
         artifacts_dir=artifacts_dir,
         populate_default_matrix=populate_default_matrix,
+        additional_matrix_list=additional_matrix_list,
         additional_files_list=additional_files_list,
         output_bundle_file_name=output_bundle_file_name,
     )
@@ -122,6 +124,7 @@ def create_default_orchestrator(
     schedule: Cron | None = None,
     artifacts_dir: str = "artifacts",
     populate_default_matrix: bool = True,
+    additional_matrix_list: list[ContextOsArchitectureCompilerGenerator] | None = None,
     additional_files_list: list[Path] | None = None,
     output_bundle_file_name: Path | None = None,
 ) -> Orchestrator:
@@ -152,6 +155,7 @@ def create_default_orchestrator(
         version=version,
         execution_matrix_name=execution_matrix_name,
         populate_default_matrix=populate_default_matrix,
+        additional_matrix_list=additional_matrix_list,
     )
 
     if output_bundle_file_name is None:

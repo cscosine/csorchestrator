@@ -199,7 +199,9 @@ def release_creation_on_tag_config_to_githubwf(
     python_code = replace_template_variable(
         python_code,
         "output_folder_additional_files",
-        fix_path_repr(repr(subfolder_generated_path)),  # this is executed in artifacts folder
+        # in the workspace, next to the artifacts folder (the script runs in it): not matched by the archive globs of
+        # the release (artifacts/**/*.tar.gz), so the bundle is uploaded once
+        f'Path(os.environ["GITHUB_WORKSPACE"]) / {fix_path_repr(repr(subfolder_generated_path))}',
     )
     python_code = replace_template_variable(
         python_code,

@@ -4,6 +4,7 @@ from csorchestrator.domain.context.context_os_architecture import (
     ARCHITECTURE_VARIANT_ARM64_ORIN,
     ARCHITECTURE_VARIANT_ARM64_XAVIER,
     ARCHITECTURE_VARIANT_GENERIC,
+    MACOS_STRING_PREFIX,
     OS,
     UBUNTU_STRING_PREFIX,
     Architecture,
@@ -23,7 +24,7 @@ def short_os_version(os: OS, version: str) -> str:
     elif os == OS.WINDOWS:
         return version  # short enough
     elif os == OS.MACOS:
-        return version  # TODO shorten mac version if needed
+        return version.replace(MACOS_STRING_PREFIX, MACOS_STRING_PREFIX[0])  # as csCMake: macos15 -> m15
     else:
         return version  # fallback is not shortened
 
@@ -59,6 +60,8 @@ def short_generator(g: Generator) -> str:
         return "ms22"
     elif g == Generator.MSVC_18_2026:
         return "ms26"
+    elif g == Generator.XCODE:
+        return "xc"
     else:
         return g.value
 

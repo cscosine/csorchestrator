@@ -14,9 +14,10 @@ variant = "__VARIANT__"
 commands = cast(dict[str, list[str]], {})  # by OS: linux, windows, macos
 clean_environment = True
 install_system_requirements = False
-expect_exit_code = 0
+expect_exit_code = cast(int | None, 0)
 timeout_seconds = 120.0
 environment = cast(dict[str, str], {})
+assessor = cast(str | None, None)  # "module:function" of the project (its root: the working directory of the step)
 
 os_name = "windows" if sys.platform == "win32" else "macos" if sys.platform == "darwin" else "linux"
 if os_name not in commands:
@@ -34,8 +35,10 @@ errors_list = run_deployment(
         expect_exit_code=expect_exit_code,
         timeout_seconds=timeout_seconds,
         environment=environment,
+        assessor=assessor,
     ),
     DeploymentArchives(Path(archives_dir), project_name, project_name_and_version, variant),
+    assessor_search_path=Path.cwd(),
 )
 
 if len(errors_list) > 0:

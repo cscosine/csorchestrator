@@ -9,6 +9,7 @@ standard library only.
 
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import shutil
@@ -203,23 +204,69 @@ def _extract(archive: Path, destination: Path) -> Path:
 
 
 @dataclass(frozen=True)
+class DeploymentRunOutput:
+    """What an assessor gets: the run of a deployment in one configuration."""
+
+    deployment: str
+    config: str
+    folder: Path  # the deployment, extracted from its archive
+    exit_code: int
+    output: str  # standard output and error, merged
+
+
+# checks the output of a run: the errors (none: the run passes)
+Assessor = Callable[[DeploymentRunOutput], list[str]]
+
+
+@dataclass(frozen=True)
 class DeploymentRun:
     deployment: str  # cs_deployment(<name> ...)
     command: list[str]  # "{folder}" replaced by the folder of the deployment (extracted from its archive)
     clean_environment: bool = True
     install_system_requirements: bool = False  # Linux: apt-get install the packages of system-requirements.txt first
-    expect_exit_code: int = 0
+    expect_exit_code: int | None = 0  # None: any exit code (e.g. the assessor checks it)
     timeout_seconds: float = 120
     environment: dict[str, str] = field(default_factory=dict)  # set on top (e.g. QT_OPENGL=software)
+    # "module:function", an Assessor checking the output after the exit code: a module of the project (its root on
+    # the import path), that imports the standard library and csorchestratorsdk only (it runs in the CI step)
+    assessor: str | None = None
+
+
+def load_assessor(spec: str, search_path: Path | None = None) -> Assessor | str:
+    """The assessor ``module:function`` (``search_path`` first on the import path, e.g. the root of the project);
+    an error message if it cannot be loaded."""
+    module_name, _, function_name = spec.partition(":")
+    if not module_name or not function_name:
+        return f"assessor {spec!r}: expected 'module:function'"
+    if search_path is not None and str(search_path) not in sys.path:
+        sys.path.insert(0, str(search_path))
+    try:
+        function = getattr(importlib.import_module(module_name), function_name)
+    except (ImportError, AttributeError) as error:
+        return f"assessor {spec!r}: {error}"
+    if not callable(function):
+        return f"assessor {spec!r}: not a function"
+    return function  # type: ignore[no-any-return]
 
 
 def run_deployment(
-    build_dir: Path, build_config: str, run: DeploymentRun, archives: DeploymentArchives, log: Log = print
+    build_dir: Path,
+    build_config: str,
+    run: DeploymentRun,
+    archives: DeploymentArchives,
+    log: Log = print,
+    assessor_search_path: Path | None = None,
 ) -> list[str]:
     """Run the command of ``run`` on its deployment extracted from its archive in a temporary folder (outside the
     workspace: the archive is complete, the deployment runs once moved), in every configuration of ``build_config``
     the deployment lists; the errors: the deployment not found, not made or not archived, another exit code, a
-    timeout."""
+    timeout, the errors of the assessor (loaded from ``assessor_search_path``, e.g. the root of the project)."""
+    assessor: Assessor | None = None
+    if run.assessor is not None:
+        loaded = load_assessor(run.assessor, assessor_search_path)
+        if isinstance(loaded, str):
+            return [f"deployment {run.deployment}: {loaded}"]
+        assessor = loaded
     deployments, errors = find_deployment_folders(build_dir, cmake_configs_of_build_config(build_config))
     deployments = [d for d in deployments if d.name == run.deployment]
     if errors:
@@ -235,36 +282,62 @@ def run_deployment(
             )
             continue
         with tempfile.TemporaryDirectory(prefix="cs-deployment-") as temporary:
-            error = _run_in(deployment.name, deployment.config, _extract(archive, Path(temporary)), run, log)
-        if error is not None:
-            errors.append(error)
+            errors.extend(
+                _run_in(deployment.name, deployment.config, _extract(archive, Path(temporary)), run, assessor, log)
+            )
     return errors
 
 
-def _run_in(name: str, config: str, folder: Path, run: DeploymentRun, log: Log) -> str | None:
-    """Run the command of ``run`` on ``folder``, the deployment name in config; an error, or None."""
+def _run_in(name: str, config: str, folder: Path, run: DeploymentRun, assessor: Assessor | None, log: Log) -> list[str]:
+    """Run the command of ``run`` on ``folder``, the deployment name in config; the errors."""
     label = f"deployment {name} ({config})"
     if run.install_system_requirements and sys.platform.startswith("linux"):
         packages = system_packages(folder)
         if packages and (error := _install_system_packages(packages, log)) is not None:
-            return f"{label}: {error}"
+            return [f"{label}: {error}"]
     command = [part.replace("{folder}", folder.as_posix()) for part in run.command]
     if shutil.which(command[0]) is None and not Path(command[0]).is_file():
-        return f"{label}: {command[0]} not found"
+        return [f"{label}: {command[0]} not found"]
     environment = clean_environment() if run.clean_environment else dict(os.environ)
     environment.update(run.environment)
     log(f"{label}: $ {' '.join(command)}")
     _no_error_dialogs()
     try:
-        result = subprocess.run(command, env=environment, timeout=run.timeout_seconds, check=False)
-    except subprocess.TimeoutExpired:
+        result = subprocess.run(
+            command,
+            env=environment,
+            timeout=run.timeout_seconds,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            errors="replace",
+        )
+    except subprocess.TimeoutExpired as expired:
+        _log_output(expired.output, log)
         _log_files(folder, log)
-        return f"{label}: still running after {run.timeout_seconds} s"
-    if result.returncode != run.expect_exit_code:
+        return [f"{label}: still running after {run.timeout_seconds} s"]
+    _log_output(result.stdout, log)
+    if run.expect_exit_code is not None and result.returncode != run.expect_exit_code:
         _log_files(folder, log)
-        return f"{label}: exit code {result.returncode}, expected {run.expect_exit_code}"
+        return [f"{label}: exit code {result.returncode}, expected {run.expect_exit_code}"]
+    if assessor is not None:
+        errors = assessor(DeploymentRunOutput(name, config, folder, result.returncode, result.stdout))
+        if errors:
+            _log_files(folder, log)
+            return [f"{label}: {error}" for error in errors]
+        log(f"{label}: exit code {result.returncode}, output assessed ({run.assessor})")
+        return []
     log(f"{label}: exit code {result.returncode}, as expected")
-    return None
+    return []
+
+
+def _log_output(output: str | bytes | None, log: Log) -> None:
+    """Log the output of the run (captured, for the assessor)."""
+    if isinstance(output, bytes):
+        output = output.decode(errors="replace")
+    if output:
+        log(output.rstrip("\n"))
 
 
 def _no_error_dialogs() -> None:

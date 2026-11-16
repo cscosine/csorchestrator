@@ -92,8 +92,12 @@ StepRunDeployment(
 - The configurations: the ones the deployment lists (`cs-deployments.json`) that the build of the job built.
 - Linux, a later mode: a bare container (`ubuntu:<release>`), `apt install` of the line of `system-requirements.txt`,
   then the command: proves the deployment and its list of system requirements.
-- Windows: a desktop session on the runners; OpenGL without GPU: Qt's `opengl32sw.dll` shipped, `QT_OPENGL=software`.
-- macOS: a desktop session on the runners (to confirm with a first run); OpenGL through the software renderer.
+- Done (`dev`): recipes `add_gui_deployment_run` (the project's command per OS, its check: exit code and/or an
+  assessor `"module:function"` of the project, which gets the exit code and the output) and
+  `add_gui_deployment_smoke_test_return_0` (an executable with `--smoke`, exit code 0), in
+  `application/recipes/gui_deployments.py`: one phase with xvfb (Linux CI), the software OpenGL of Mesa as
+  `opengl32sw.dll` (Windows CI, `QT_OPENGL=software`), the desktop of the session (macOS: confirmed on the runners,
+  OpenGL 4.1 core); used by the csVisOpenGL sample (csfoundation), csImgTracker, csSkiTracker.
 - csImgTracker has `--smoke` (start, check the OpenGL views got a context, exit 0; else 1); plain `offscreen` has no
   OpenGL context and csImgTracker crashes there: `xvfb-run` on Linux.
 - A smoke option of an application should end its process right after the check (e.g. `std::_Exit`, the output
