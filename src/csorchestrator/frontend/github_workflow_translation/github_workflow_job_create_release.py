@@ -63,8 +63,10 @@ class JobReleaseCreationFromArtifacts:
             self.release_creation_context.orchestrator_description.name_and_version_string
         )
 
-        output_manifest_path = Path(artifacts_dir) / output_folder_for_generated_files / output_manifest_filename
-        output_bundle_path = Path(artifacts_dir) / output_folder_for_generated_files / output_bundle_file
+        # the generated files (manifest, bundle): in a folder of their own next to the artifacts folder, outside the
+        # archive globs of the release, so every file is uploaded once
+        output_manifest_path = output_folder_for_generated_files / output_manifest_filename
+        output_bundle_path = output_folder_for_generated_files / output_bundle_file
 
         additional_files_for_release_list: list[Path] = [output_manifest_path]
         if has_additional_files_for_bundle:
@@ -81,6 +83,9 @@ class JobReleaseCreationFromArtifacts:
             # clean folder is necessary in case a second exec of the release job is required
             # e.g. a retry in case of infra issues
             CleanArtifactsFolder(artifacts_dir).to_dict(),
+            CleanArtifactsFolder(
+                output_folder_for_generated_files.as_posix(), name="Clean Generated Files Folder"
+            ).to_dict(),
             DownloadAllArtifacts(artifacts_dir).to_dict(),
             ShowDownloadedFiles(artifacts_dir).to_dict(),
         ]
