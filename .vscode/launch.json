@@ -322,6 +322,16 @@
       "justMyCode": false
     },
     {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_gui_deployments \u2192 test_smoke_test_return_0_and_a_run_with_an_assessor_share_one_phase",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_gui_deployments.py::test_smoke_test_return_0_and_a_run_with_an_assessor_share_one_phase"
+      ],
+      "justMyCode": false
+    },
+    {
       "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_manifest_github \u2192 test_create_steps_to_get_libs_from_manifest_creates_one_step_per_lib_with_default_phase_name",
       "type": "debugpy",
       "request": "launch",
@@ -518,6 +528,16 @@
       "module": "pytest",
       "args": [
         "tests/csorchestrator/ci/test_github_runner.py::test_get_runner_macos[macos26-macos-26]"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_release_job_generated_files_outside_the_artifacts_folder",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/ci/test_github_runner.py::test_release_job_generated_files_outside_the_artifacts_folder"
       ],
       "justMyCode": false
     },
@@ -1522,6 +1542,16 @@
       "justMyCode": false
     },
     {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_run_deployment_fails_on_an_assessor_not_found",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_run_deployment_fails_on_an_assessor_not_found"
+      ],
+      "justMyCode": false
+    },
+    {
       "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_run_deployment_fails_on_an_unknown_deployment",
       "type": "debugpy",
       "request": "launch",
@@ -1548,6 +1578,16 @@
       "module": "pytest",
       "args": [
         "tests/csorchestrator/step/test_step_deployments.py::test_run_deployment_fails_without_its_archive"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/step/test_step_deployments \u2192 test_run_deployment_with_an_assessor",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/step/test_step_deployments.py::test_run_deployment_with_an_assessor"
       ],
       "justMyCode": false
     },

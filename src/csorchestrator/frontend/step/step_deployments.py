@@ -176,7 +176,8 @@ class StepRunDeployment(StepBase):
     ``clean_environment``: nothing to find libraries with (system folders only on PATH);
     ``install_system_requirements``: in CI on Linux, ``apt-get install`` the packages of ``system-requirements.txt``
     first (never locally); ``environment``: variables set on top (e.g. ``QT_OPENGL=software`` on a machine without
-    GPU). Another exit code than ``expect_exit_code``, or a run longer than ``timeout_seconds``, fails."""
+    GPU). Another exit code than ``expect_exit_code`` (None: any), or a run longer than ``timeout_seconds``, fails;
+    ``assessor`` (``"module:function"``, a module of the project, see ``DeploymentRun``): checks the output."""
 
     deployment: str
     command: dict[OS, list[str]]
@@ -185,9 +186,10 @@ class StepRunDeployment(StepBase):
     archives_dir: Path
     clean_environment: bool = True
     install_system_requirements: bool = False
-    expect_exit_code: int = 0
+    expect_exit_code: int | None = 0
     timeout_seconds: float = 120
     environment: dict[str, str] = field(default_factory=dict)
+    assessor: str | None = None
     _commands_by_os: dict[str, list[str]] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -210,6 +212,7 @@ def execute_step_run_deployment(step: StepRunDeployment, context: ContextLocalEx
         expect_exit_code=step.expect_exit_code,
         timeout_seconds=step.timeout_seconds,
         environment=step.environment,
+        assessor=step.assessor,
     )
     variant = _local_variant(context)
     description = context.orchestrator_description
@@ -220,7 +223,14 @@ def execute_step_run_deployment(step: StepRunDeployment, context: ContextLocalEx
         variant,
     )
     build_dir = (context.base_folder_path / step.base_build_dir / variant).resolve()
-    for error in run_deployment(build_dir, step.build_config.value, run, archives, log=report.append_info):
+    for error in run_deployment(
+        build_dir,
+        step.build_config.value,
+        run,
+        archives,
+        log=report.append_info,
+        assessor_search_path=context.base_folder_path.resolve(),
+    ):
         report.append_error(error)
     return report
 
@@ -246,6 +256,7 @@ def step_run_deployment_to_githubwf(
             "expect_exit_code": repr(step.expect_exit_code),
             "timeout_seconds": repr(float(step.timeout_seconds)),
             "environment": repr(step.environment),
+            "assessor": repr(step.assessor),
         },
     )
     # PYTHONPATH: the template imports csorchestratorsdk, copied at the root of the checkout of the project

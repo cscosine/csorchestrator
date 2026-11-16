@@ -214,6 +214,43 @@ def test_run_deployment_fails_on_a_timeout(tmp_path: Path) -> None:
     assert errors == ["deployment demo (Release): still running after 0.5 s"]
 
 
+def test_run_deployment_with_an_assessor(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The assessor (module:function of the project, from assessor_search_path) gets the exit code and the output
+    (standard output and error merged); its errors fail the run; expect_exit_code None: any exit code."""
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "my_assessors.py").write_text(
+        "def needs_ok(run):\n"
+        "    return [] if 'smoke: ok' in run.output and run.exit_code == 3 else [f'no ok ({run.exit_code})']\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sys, "path", list(sys.path))  # the search path added by the run: undone after the test
+    ok = "import sys; print('smoke:', file=sys.stderr, end=' '); print('ok', file=sys.stderr); sys.exit(3)"
+    common = {"expect_exit_code": None, "assessor": "my_assessors:needs_ok"}
+
+    def run(directory: str, code: str) -> list[str]:
+        build, deploy, archives = tmp_path / directory / "build", tmp_path / directory / "deploy", tmp_path / directory
+        _deployments(build, deploy, [("app", "demo", ["Release"])])
+        _deployment_folder(deploy / "demo-Release")
+        assert create_deployment_archives(build, "release", "app", "app-1.0.0", VARIANT, archives / "a") == []
+        demo = DeploymentRun(deployment="demo", command=[sys.executable, "-c", code], **common)  # type: ignore[arg-type]
+        archived = DeploymentArchives(archives / "a", "app", "app-1.0.0", VARIANT)
+        return run_deployment(build, "release", demo, archived, assessor_search_path=project)
+
+    assert run("passes", ok) == []
+    assert run("fails", "import sys; sys.exit(3)") == ["deployment demo (Release): no ok (3)"]
+
+
+def test_run_deployment_fails_on_an_assessor_not_found(tmp_path: Path) -> None:
+    errors = _run(tmp_path, "import sys; sys.exit(0)", assessor="no_such_module_xyz:check")
+
+    assert len(errors) == 1
+    assert errors[0].startswith("deployment demo: assessor 'no_such_module_xyz:check': No module named")
+    assert _run(tmp_path / "bad", "import sys; sys.exit(0)", assessor="check") == [
+        "deployment demo: assessor 'check': expected 'module:function'"
+    ]
+
+
 def test_run_deployment_fails_on_an_unknown_deployment(tmp_path: Path) -> None:
     build = tmp_path / "build"
     _deployments(build, tmp_path / "deploy", [])
@@ -276,6 +313,7 @@ def test_github_step_of_a_run() -> None:
     assert "'windows': ['{folder}/bin/app.exe']" in code
     assert "install_system_requirements = True" in code
     assert "environment = {'QT_OPENGL': 'software'}" in code
+    assert "assessor = None" in code
 
 
 def test_the_release_attaches_the_zip_archives() -> None:
