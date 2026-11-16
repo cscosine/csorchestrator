@@ -7,9 +7,11 @@ import yaml
 
 from csorchestrator.domain.context.context_compiler_generator import ContextCompilerGenerator, Generator
 from csorchestrator.domain.context.context_os_architecture import (
+    MACOS_STRING_PREFIX,
     OS,
     UBUNTU_STRING_PREFIX,
     Architecture,
+    MacOSVersions,
     UbuntuVersions,
     WindowsVersions,
 )
@@ -53,6 +55,27 @@ GITHUB_RUNNER_UBUNTU_22_04_ARM64 = GITHUB_RUNNER_UBUNTU_22_04 + "-arm"
 GITHUB_RUNNER_UBUNTU_24_04 = UBUNTU_STRING_PREFIX + "-24.04"
 GITHUB_RUNNER_UBUNTU_24_04_ARM64 = GITHUB_RUNNER_UBUNTU_24_04 + "-arm"
 
+GITHUB_RUNNER_UBUNTU_26_04 = UBUNTU_STRING_PREFIX + "-26.04"
+GITHUB_RUNNER_UBUNTU_26_04_ARM64 = GITHUB_RUNNER_UBUNTU_26_04 + "-arm"
+
+# macos-<version> images are Apple Silicon (arm64); they ship Xcode, CMake and Ninja
+GITHUB_RUNNER_MACOS_15 = MACOS_STRING_PREFIX + "-15"
+GITHUB_RUNNER_MACOS_26 = MACOS_STRING_PREFIX + "-26"
+
+GITHUB_RUNNERS_UBUNTU: dict[tuple[str, Architecture], str] = {
+    (UbuntuVersions.UBUNTU_22_04.value, Architecture.X64): GITHUB_RUNNER_UBUNTU_22_04,
+    (UbuntuVersions.UBUNTU_22_04.value, Architecture.ARM64): GITHUB_RUNNER_UBUNTU_22_04_ARM64,
+    (UbuntuVersions.UBUNTU_24_04.value, Architecture.X64): GITHUB_RUNNER_UBUNTU_24_04,
+    (UbuntuVersions.UBUNTU_24_04.value, Architecture.ARM64): GITHUB_RUNNER_UBUNTU_24_04_ARM64,
+    (UbuntuVersions.UBUNTU_26_04.value, Architecture.X64): GITHUB_RUNNER_UBUNTU_26_04,
+    (UbuntuVersions.UBUNTU_26_04.value, Architecture.ARM64): GITHUB_RUNNER_UBUNTU_26_04_ARM64,
+}
+
+GITHUB_RUNNERS_MACOS: dict[tuple[str, Architecture], str] = {
+    (MacOSVersions.MACOS_15.value, Architecture.ARM64): GITHUB_RUNNER_MACOS_15,
+    (MacOSVersions.MACOS_26.value, Architecture.ARM64): GITHUB_RUNNER_MACOS_26,
+}
+
 GITHUB_RUNNER_WINDOWS_2022 = OS.WINDOWS.value + "-2022"
 GITHUB_RUNNER_WINDOWS_2025_VS2026 = OS.WINDOWS.value + "-2025-vs2026"
 
@@ -65,14 +88,11 @@ def get_runner(entry: ContextOsArchitectureCompilerGenerator) -> Expected[str, s
     compiler_version = entry.context_compiler_generator.compiler_version
 
     if os == OS.LINUX:
-        if os_version == UbuntuVersions.UBUNTU_22_04.value and arch == Architecture.X64:
-            return Expected[str, str].make_value(GITHUB_RUNNER_UBUNTU_22_04)
-        elif os_version == UbuntuVersions.UBUNTU_24_04.value and arch == Architecture.X64:
-            return Expected[str, str].make_value(GITHUB_RUNNER_UBUNTU_24_04)
-        elif os_version == UbuntuVersions.UBUNTU_22_04.value and arch == Architecture.ARM64:
-            return Expected[str, str].make_value(GITHUB_RUNNER_UBUNTU_22_04_ARM64)
-        elif os_version == UbuntuVersions.UBUNTU_24_04.value and arch == Architecture.ARM64:
-            return Expected[str, str].make_value(GITHUB_RUNNER_UBUNTU_24_04_ARM64)
+        if (os_version, arch) in GITHUB_RUNNERS_UBUNTU:
+            return Expected[str, str].make_value(GITHUB_RUNNERS_UBUNTU[(os_version, arch)])
+    elif os == OS.MACOS:
+        if (os_version, arch) in GITHUB_RUNNERS_MACOS:
+            return Expected[str, str].make_value(GITHUB_RUNNERS_MACOS[(os_version, arch)])
     elif os == OS.WINDOWS and os_version == WindowsVersions.WIN10.value and arch == Architecture.X64:
         if generator == Generator.MSVC_17_2022:
             return Expected[str, str].make_value(GITHUB_RUNNER_WINDOWS_2022)

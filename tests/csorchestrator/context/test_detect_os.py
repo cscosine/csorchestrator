@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from csorchestrator.domain.context.context_os_architecture import (
+    MACOS_STRING_PREFIX,
     OS,
     OS_PLATFORM_MACOS,
     UBUNTU_STRING_PREFIX,
@@ -59,7 +60,7 @@ def test_detect_os_mock_macos_from_windows():
         result = detect_os()
 
     assert result.error is None
-    assert result.value == (OS.MACOS, "v14.5")
+    assert result.value == (OS.MACOS, "macos14")
 
 
 # =========================================================
@@ -101,7 +102,7 @@ def test_detect_os_mock_macos_from_linux():
         result = detect_os()
 
     assert result.error is None
-    assert result.value == (OS.MACOS, "v14.5")
+    assert result.value == (OS.MACOS, "macos14")
 
 
 # =========================================================
@@ -119,7 +120,9 @@ def test_detect_os_real_macos():
     detected_os, version = result.value
 
     assert detected_os == OS.MACOS
-    assert version[0] == VERSION_STRING_PREFIX
+    # as the csCMake variants: macos<major>, e.g. macos15
+    assert version.startswith(MACOS_STRING_PREFIX)
+    assert version.removeprefix(MACOS_STRING_PREFIX).isdigit()
 
 
 @pytest.mark.skipif(platform.system().lower() != OS_PLATFORM_MACOS, reason=OS.MACOS.value + "-only test")

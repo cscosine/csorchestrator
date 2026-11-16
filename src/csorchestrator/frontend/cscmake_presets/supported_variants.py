@@ -13,6 +13,7 @@ from csorchestrator.domain.context.context_os_architecture import (
     OS,
     Architecture,
     ContextOsArchitecture,
+    MacOSVersions,
     UbuntuVersions,
     WindowsVersions,
 )
@@ -33,14 +34,34 @@ from csorchestrator.frontend.github_workflow_translation.github_workflow_matrix_
 # once cscmake will be stable and usable via pip install, then we can move this file there
 
 
+def get_all_supported_os_version_list(os: OS) -> list[str]:
+    """Every OS version csorchestrator can generate a workflow for (the csCMake 1.0 presets)."""
+    match os:
+        case OS.LINUX:
+            return [v.value for v in UbuntuVersions]
+        case OS.WINDOWS:
+            return [WindowsVersions.WIN10.value]
+        case OS.MACOS:
+            return [v.value for v in MacOSVersions]
+        case _:
+            assert_never(os)
+
+
 def get_supported_os_version_list(os: OS) -> list[str]:
+    """The OS versions of the default matrix (``get_supported_context_os_architecture_list``).
+
+    Projects that build their own matrix from this list (csqt6, csopencvcuda) keep the same versions.
+    The other supported versions (``get_all_supported_os_version_list``: Ubuntu 26.04, macOS) are opt-in
+    per project: ``get_context_list_linux``, ``get_context_list_macos``, passed as ``additional_matrix_list``
+    of the recipes.
+    """
     match os:
         case OS.LINUX:
             return [UbuntuVersions.UBUNTU_22_04.value, UbuntuVersions.UBUNTU_24_04.value]
         case OS.WINDOWS:
             return [WindowsVersions.WIN10.value]
         case OS.MACOS:
-            return []  # TODO add MACOS support
+            return []
         case _:
             assert_never(os)
 
@@ -117,34 +138,87 @@ def get_supported_compilers_windows_ninja_generator() -> list[tuple[Compiler, st
     ]
 
 
+def get_supported_generators_macos() -> list[GeneratorWithType]:
+    return [GeneratorWithType.NINJA, GeneratorWithType.NINJA_MULTI, GeneratorWithType.XCODE]
+
+
+def get_default_generators_macos() -> list[GeneratorWithType]:
+    return [GeneratorWithType.NINJA_MULTI, GeneratorWithType.XCODE]
+
+
+def get_supported_compilers_macos() -> list[Compiler]:
+    return [Compiler.APPLE_CLANG]
+
+
+def get_context_list_linux(os_version: str) -> list[ContextOsArchitectureCompilerGenerator]:
+    """The Linux variants of one Ubuntu version: x64 Ninja Multi-Config, arm64 Ninja; GCC and Clang."""
+    if os_version not in get_all_supported_os_version_list(OS.LINUX):
+        raise ValueError(f"unsupported Linux version: {os_version}")
+
+    ret_list: list[ContextOsArchitectureCompilerGenerator] = []
+    for arch in [Architecture.X64, Architecture.ARM64]:
+        os_arch = ContextOsArchitecture(
+            os=OS.LINUX,
+            os_version=os_version,
+            architecture=arch,
+            architecture_variant=ARCHITECTURE_VARIANT_GENERIC,
+        )
+        for compiler in get_supported_compilers_linux():
+            for generator in get_default_generators_linux(arch):
+                ccg = ContextCompilerGenerator(
+                    compiler_family=compiler,
+                    compiler_version=ContextCompilerGenerator.COMPILER_VERSION_DEFAULT,
+                    build_generator=generator,
+                )
+                ret_list.append(
+                    ContextOsArchitectureCompilerGenerator(
+                        context_os_architecture=os_arch, context_compiler_generator=ccg
+                    )
+                )
+    return ret_list
+
+
+def get_context_list_macos(
+    os_version: str, generators: list[GeneratorWithType] | None = None
+) -> list[ContextOsArchitectureCompilerGenerator]:
+    """The macOS variants of one macOS version: arm64 (Apple Silicon), Apple Clang; by default Ninja Multi-Config and
+    Xcode (``generators`` to choose among ``get_supported_generators_macos``)."""
+    if os_version not in get_all_supported_os_version_list(OS.MACOS):
+        raise ValueError(f"unsupported macOS version: {os_version}")
+    if generators is None:
+        generators = get_default_generators_macos()
+    for generator in generators:
+        if generator not in get_supported_generators_macos():
+            raise ValueError(f"unsupported macOS generator: {generator.generator.value}")
+
+    os_arch = ContextOsArchitecture(
+        os=OS.MACOS,
+        os_version=os_version,
+        architecture=Architecture.ARM64,
+        architecture_variant=ARCHITECTURE_VARIANT_GENERIC,
+    )
+    ret_list: list[ContextOsArchitectureCompilerGenerator] = []
+    for compiler in get_supported_compilers_macos():
+        for generator in generators:
+            ccg = ContextCompilerGenerator(
+                compiler_family=compiler,
+                compiler_version=ContextCompilerGenerator.COMPILER_VERSION_DEFAULT,
+                build_generator=generator,
+            )
+            ret_list.append(
+                ContextOsArchitectureCompilerGenerator(context_os_architecture=os_arch, context_compiler_generator=ccg)
+            )
+    return ret_list
+
+
 def get_supported_context_os_architecture_list() -> list[ContextOsArchitectureCompilerGenerator]:
+    """The default matrix: Ubuntu 22.04 / 24.04, Windows 10. Ubuntu 26.04 and macOS are opt-in per project."""
 
     ret_list: list[ContextOsArchitectureCompilerGenerator] = []
 
     ## LINUX. use multi-config for x64 arch, use single config for arm64 arch
     for os_version in get_supported_os_version_list(OS.LINUX):
-        for arch in [Architecture.X64, Architecture.ARM64]:
-            os_arch = ContextOsArchitecture(
-                os=OS.LINUX,
-                os_version=os_version,
-                architecture=arch,
-                architecture_variant=ARCHITECTURE_VARIANT_GENERIC,
-            )
-            generators = get_default_generators_linux(arch)
-            compilers = get_supported_compilers_linux()
-
-            for compiler in compilers:
-                for generator in generators:
-                    ccg = ContextCompilerGenerator(
-                        compiler_family=compiler,
-                        compiler_version=ContextCompilerGenerator.COMPILER_VERSION_DEFAULT,
-                        build_generator=generator,
-                    )
-                    ret_list.append(
-                        ContextOsArchitectureCompilerGenerator(
-                            context_os_architecture=os_arch, context_compiler_generator=ccg
-                        )
-                    )
+        ret_list += get_context_list_linux(os_version)
 
     ## WINDOWS
     for os_version in get_supported_os_version_list(OS.WINDOWS):
@@ -170,9 +244,10 @@ def get_supported_context_os_architecture_list() -> list[ContextOsArchitectureCo
                         context_os_architecture=os_arch, context_compiler_generator=ccg
                     )
                 )
-    ## MACOS
-    # for os_version in get_supported_os_version_list(OS.MACOS):
-    #     _ = os_version  # TODO add MACOS support
+
+    ## MACOS: none by default
+    for os_version in get_supported_os_version_list(OS.MACOS):
+        ret_list += get_context_list_macos(os_version)
 
     return ret_list
 

@@ -31,6 +31,7 @@ class Generator(Enum):
     NINJA_MULTI = "ninjamulticonfig"
     MSVC_17_2022 = "msvc2022"
     MSVC_18_2026 = "msvc2026"
+    XCODE = "xcode"
 
     def get_cmake_generator_name(self) -> str | None:
         if self == Generator.NINJA:
@@ -41,6 +42,8 @@ class Generator(Enum):
             return "Visual Studio 17 2022"
         elif self == Generator.MSVC_18_2026:
             return "Visual Studio 18 2026"
+        elif self == Generator.XCODE:
+            return "Xcode"
         else:
             return None
 
@@ -60,6 +63,7 @@ class GeneratorWithType:
     NINJA_MULTI: ClassVar["GeneratorWithType"]
     MSVC_17_2022: ClassVar["GeneratorWithType"]
     MSVC_18_2026: ClassVar["GeneratorWithType"]
+    XCODE: ClassVar["GeneratorWithType"]
 
 
 # define them AFTER the class exists
@@ -80,6 +84,11 @@ GeneratorWithType.MSVC_17_2022 = GeneratorWithType(
 
 GeneratorWithType.MSVC_18_2026 = GeneratorWithType(
     Generator.MSVC_18_2026,
+    GeneratorType.MULTI_CONFIG,
+)
+
+GeneratorWithType.XCODE = GeneratorWithType(
+    Generator.XCODE,
     GeneratorType.MULTI_CONFIG,
 )
 

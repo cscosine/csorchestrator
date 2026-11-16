@@ -32,6 +32,16 @@
       "justMyCode": false
     },
     {
+      "name": "\ud83d\udcc1 tests/csorchestrator/ci tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/ci"
+      ],
+      "justMyCode": false
+    },
+    {
       "name": "\ud83d\udcc1 tests/csorchestrator/cli tests",
       "type": "debugpy",
       "request": "launch",
@@ -438,6 +448,76 @@
       "module": "pytest",
       "args": [
         "tests/csorchestrator/application/recipes/test_manifest_github.py::test_resolve_library_dependencies_lib_without_declared_dependencies"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_factory_additional_matrix_list",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/ci/test_github_runner.py::test_factory_additional_matrix_list"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_get_runner_default_matrix",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/ci/test_github_runner.py::test_get_runner_default_matrix"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_get_runner_linux[ubuntu22.04-expected0]",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/ci/test_github_runner.py::test_get_runner_linux[ubuntu22.04-expected0]"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_get_runner_linux[ubuntu24.04-expected1]",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/ci/test_github_runner.py::test_get_runner_linux[ubuntu24.04-expected1]"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_get_runner_linux[ubuntu26.04-expected2]",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/ci/test_github_runner.py::test_get_runner_linux[ubuntu26.04-expected2]"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_get_runner_macos[macos15-macos-15]",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/ci/test_github_runner.py::test_get_runner_macos[macos15-macos-15]"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_get_runner_macos[macos26-macos-26]",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/ci/test_github_runner.py::test_get_runner_macos[macos26-macos-26]"
       ],
       "justMyCode": false
     },
@@ -2452,6 +2532,26 @@
       "justMyCode": false
     },
     {
+      "name": "\ud83e\uddea tests/csorchestrator/utils/presets/test_supported_variants \u2192 test_default_matrix_unchanged",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/utils/presets/test_supported_variants.py::test_default_matrix_unchanged"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/utils/presets/test_supported_variants \u2192 test_get_all_supported_os_version_list",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/utils/presets/test_supported_variants.py::test_get_all_supported_os_version_list"
+      ],
+      "justMyCode": false
+    },
+    {
       "name": "\ud83e\uddea tests/csorchestrator/utils/presets/test_supported_variants \u2192 test_get_all_supported_workflow_descriptions",
       "type": "debugpy",
       "request": "launch",
@@ -2462,12 +2562,22 @@
       "justMyCode": false
     },
     {
-      "name": "\ud83e\uddea tests/csorchestrator/utils/presets/test_supported_variants \u2192 test_get_supported_os_version_list",
+      "name": "\ud83e\uddea tests/csorchestrator/utils/presets/test_supported_variants \u2192 test_get_context_list_linux_26_04",
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
       "args": [
-        "tests/csorchestrator/utils/presets/test_supported_variants.py::test_get_supported_os_version_list"
+        "tests/csorchestrator/utils/presets/test_supported_variants.py::test_get_context_list_linux_26_04"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/utils/presets/test_supported_variants \u2192 test_get_context_list_macos",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/utils/presets/test_supported_variants.py::test_get_context_list_macos"
       ],
       "justMyCode": false
     },
