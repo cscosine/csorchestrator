@@ -138,5 +138,16 @@ archives are made, with the secrets in the GitHub secrets of the organization:
   SignPath Foundation (free for OSI-licensed public open-source projects, built on GitHub Actions; publisher shown:
   SignPath Foundation), an OV certificate (~US$200–400 a year, key in a cloud HSM). A new signature still builds
   SmartScreen reputation over the downloads.
+- Windows, preferred route for an individual (2026-11-17): the **Microsoft Store**. Registration is free for
+  individuals (since 2025-09) and companies (since 2026-05); the Store signs MSIX packages itself (no certificate to
+  buy), and the app installs from the Store without SmartScreen warnings. Work: an MSIX package of the deployment
+  (`AppxManifest.xml`: identity from Partner Center, a full-trust desktop app `Windows.FullTrustApplication` with
+  `runFullTrust`, the version as `a.b.c.0`; logos; `MakeAppx.exe pack` of the Windows SDK, on the Windows runner); the
+  submission per release with the Microsoft Store Developer CLI (`msstore`, Partner Center API credentials in the
+  GitHub secrets), then the Store certification (hours to days). An MSIX on the GitHub release does not replace it: an
+  MSIX must be signed to install at all, and the Store signature only comes with the Store; outside the Store it needs
+  one of the certificates above (self-signed: the user must trust our certificate first). The `.zip` downloads stay,
+  with the first-run instructions.
 - Linux: nothing required (optionally a detached GPG signature or a SHA256SUMS of the archives).
-- Decide: who owns the certificates (individual or company), which Windows provider.
+- Decide: Store for Windows (no certificate) or a certificate (who owns it: individual or company, which provider);
+  macOS: the Apple Developer Program in any case.
