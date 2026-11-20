@@ -168,6 +168,8 @@ class CreateGitHubRelease(GithubStepInterface):
             "uses": "softprops/action-gh-release@v3",
             "with": {
                 "files": LiteralString("\n".join(extension_files)),
+                # a release candidate (a tag with -rc) is a pre-release: never shown as the latest release
+                "prerelease": "${{ contains(github.ref_name, '-rc') }}",
             },
         }
         ret["if"] = self.if_str

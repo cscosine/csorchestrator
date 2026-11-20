@@ -472,6 +472,16 @@
       "justMyCode": false
     },
     {
+      "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_default_triggers_build_dev_and_tags_only",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/ci/test_github_runner.py::test_default_triggers_build_dev_and_tags_only"
+      ],
+      "justMyCode": false
+    },
+    {
       "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_factory_additional_matrix_list",
       "type": "debugpy",
       "request": "launch",
@@ -538,6 +548,16 @@
       "module": "pytest",
       "args": [
         "tests/csorchestrator/ci/test_github_runner.py::test_get_runner_macos[macos26-macos-26]"
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_release_candidate_is_a_prerelease",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/ci/test_github_runner.py::test_release_candidate_is_a_prerelease"
       ],
       "justMyCode": false
     },

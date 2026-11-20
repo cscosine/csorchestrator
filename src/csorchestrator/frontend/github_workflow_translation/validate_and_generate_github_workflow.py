@@ -191,7 +191,7 @@ def create_github_wf(name: str, *, config: WorkflowTrigger) -> GitHubWorkflow:
     gwf = GitHubWorkflow(name)
     if config.on_push_branches is not None or config.on_push_tags is not None:
         gwf.on_push(branches=config.on_push_branches, tags=config.on_push_tags)
-    if config.on_pull_request_branches is not None:
+    if config.on_pull_request_branches:
         gwf.on_pull_request(branches=config.on_pull_request_branches)
     if config.on_dispatch:  # not None and true
         gwf.on_dispatch()

@@ -134,10 +134,12 @@ def create_default_orchestrator(
     if additional_files_list is None:
         additional_files_list = []
 
+    # builds on dev and on the tags only: main is fast-forwarded to commits already built (no build for that push, no
+    # pull request into it); the weekly schedule runs on the default branch (main) as a canary
     if on_pull_request_branches is None:
-        on_pull_request_branches = ["main"]
+        on_pull_request_branches = []
     if on_push_branches is None:
-        on_push_branches = ["main", "dev"]
+        on_push_branches = ["dev"]
     if on_push_tags is None:
         on_push_tags = ["v*.*.*"]
 

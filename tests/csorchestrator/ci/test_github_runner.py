@@ -102,3 +102,56 @@ def test_release_job_generated_files_outside_the_artifacts_folder() -> None:
         "rm -rf artifacts",
         "rm -rf generated-for-release",
     ]
+
+
+def test_release_candidate_is_a_prerelease() -> None:
+    from pathlib import Path
+
+    from csorchestrator.domain.orchestrator.orchestrator import OrchestratorDescription
+    from csorchestrator.frontend.github_workflow_translation.github_workflow_job_create_release import (
+        JobReleaseCreationFromArtifacts,
+    )
+    from csorchestrator.frontend.github_workflow_translation.release_creation_context import ReleaseCreationContext
+    from csorchestrator.frontend.step.release_creation import ReleaseCreationOnTagConfig
+
+    config = ReleaseCreationOnTagConfig(
+        name="release",
+        base_install_dir=Path("install"),
+        artifacts_dir="artifacts",
+        additional_files_list=[],
+        output_bundle_file_name=Path("p-1.0.0-bundle.tar.gz"),
+        dependencies={},
+        dependencies_dev={},
+    )
+    job = JobReleaseCreationFromArtifacts(
+        config=config,
+        needs="build",
+        release_creation_context=ReleaseCreationContext(
+            orchestrator_description=OrchestratorDescription("p", "1.0.0", "p-1.0.0"),
+            matrix_list=get_context_list_linux("ubuntu24.04"),
+            script_folder_path=Path("."),
+        ),
+        runs_on="ubuntu-latest",
+        if_str="x",
+    ).to_dict()
+    release = next(s for s in job["release"]["steps"] if s["name"] == "Create GitHub Release")
+    # v1.2.0-rc3: a pre-release, never the latest release; v1.2.0: a release
+    assert release["with"]["prerelease"] == "${{ contains(github.ref_name, '-rc') }}"
+
+
+def test_default_triggers_build_dev_and_tags_only() -> None:
+    from pathlib import Path
+
+    from csorchestrator.application.recipes.create_orchestrator import create_default_orchestrator
+    from csorchestrator.frontend.github_workflow_translation.validate_and_generate_github_workflow import (
+        create_github_wf,
+    )
+
+    o = create_default_orchestrator(name="p", version="1.0.0", base_install_dir=Path("install"))
+    assert o.wf_config is not None
+    on = {k: v.to_dict() for k, v in create_github_wf("p", config=o.wf_config.trigger)._on.items()}
+    # main is fast-forwarded to commits already built on dev: no build for that push, no pull request trigger; the
+    # schedule runs on the default branch (main)
+    assert on["push"] == {"push": {"branches": ["dev"], "tags": ["v*.*.*"]}}
+    assert "pull_request" not in on
+    assert "schedule" in on and "workflow_dispatch" in on
