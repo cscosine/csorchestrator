@@ -322,6 +322,16 @@
       "justMyCode": false
     },
     {
+      "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_gui_deployments \u2192 test_mesa_is_checked_against_its_sha256_before_use",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/csorchestrator/application/recipes/test_gui_deployments.py::test_mesa_is_checked_against_its_sha256_before_use"
+      ],
+      "justMyCode": false
+    },
+    {
       "name": "\ud83e\uddea tests/csorchestrator/application/recipes/test_gui_deployments \u2192 test_smoke_test_return_0_and_a_run_with_an_assessor_share_one_phase",
       "type": "debugpy",
       "request": "launch",
