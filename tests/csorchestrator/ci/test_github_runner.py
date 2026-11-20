@@ -139,7 +139,7 @@ def test_release_candidate_is_a_prerelease() -> None:
     assert release["with"]["prerelease"] == "${{ contains(github.ref_name, '-rc') }}"
 
 
-def test_default_triggers_build_dev_and_tags_only() -> None:
+def test_default_triggers_build_main_and_tags_only() -> None:
     from pathlib import Path
 
     from csorchestrator.application.recipes.create_orchestrator import create_default_orchestrator
@@ -150,8 +150,8 @@ def test_default_triggers_build_dev_and_tags_only() -> None:
     o = create_default_orchestrator(name="p", version="1.0.0", base_install_dir=Path("install"))
     assert o.wf_config is not None
     on = {k: v.to_dict() for k, v in create_github_wf("p", config=o.wf_config.trigger)._on.items()}
-    # main is fast-forwarded to commits already built on dev: no build for that push, no pull request trigger; the
-    # schedule runs on the default branch (main)
-    assert on["push"] == {"push": {"branches": ["dev"], "tags": ["v*.*.*"]}}
+    # main is the trunk; stable is fast-forwarded to released commits (no build for that push); no pull request
+    # trigger; the schedule runs on the default branch (main)
+    assert on["push"] == {"push": {"branches": ["main"], "tags": ["v*.*.*"]}}
     assert "pull_request" not in on
     assert "schedule" in on and "workflow_dispatch" in on

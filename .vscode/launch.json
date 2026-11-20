@@ -472,12 +472,12 @@
       "justMyCode": false
     },
     {
-      "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_default_triggers_build_dev_and_tags_only",
+      "name": "\ud83e\uddea tests/csorchestrator/ci/test_github_runner \u2192 test_default_triggers_build_main_and_tags_only",
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
       "args": [
-        "tests/csorchestrator/ci/test_github_runner.py::test_default_triggers_build_dev_and_tags_only"
+        "tests/csorchestrator/ci/test_github_runner.py::test_default_triggers_build_main_and_tags_only"
       ],
       "justMyCode": false
     },
