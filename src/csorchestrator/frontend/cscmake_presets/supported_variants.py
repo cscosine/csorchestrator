@@ -50,7 +50,7 @@ def get_all_supported_os_version_list(os: OS) -> list[str]:
 def get_supported_os_version_list(os: OS) -> list[str]:
     """The OS versions of the default matrix (``get_supported_context_os_architecture_list``).
 
-    Projects that build their own matrix from this list (csqt6, csopencvcuda) keep the same versions.
+    Projects that build their own matrix from this list keep the same versions.
     The other supported versions (``get_all_supported_os_version_list``: Ubuntu 26.04, macOS) are opt-in
     per project: ``get_context_list_linux``, ``get_context_list_macos``, passed as ``additional_matrix_list``
     of the recipes.

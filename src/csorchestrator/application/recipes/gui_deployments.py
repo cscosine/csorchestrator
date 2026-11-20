@@ -25,8 +25,10 @@ from csorchestrator.frontend.step.step_deployments import StepRunDeployment
 
 GUI_DEPLOYMENT_RUN_PHASE_NAME = "Run Deployments"
 
-# the software OpenGL of Mesa for the Windows runners (mesa-dist-win, MSVC build)
+# the software OpenGL of Mesa for the Windows runners (mesa-dist-win, MSVC build), checked against its SHA-256 (the
+# digest GitHub lists for the release asset): a version change needs the new checksum
 MESA_DIST_WIN_VERSION = "25.2.6"
+MESA_DIST_WIN_SHA256 = "4d21205818fb946c3a94ae2552364a1ef14d3f8a907ccd98585907cf536510a5"
 
 # QT_OPENGL: the software OpenGL on Windows (opengl32sw.dll); QT_FORCE_STDERR_LOGGING: the messages of Qt in the log
 # (a GUI application on Windows has no console); GALLIUM_DRIVER: the software renderer of Mesa
@@ -65,6 +67,9 @@ def _gui_deployment_run_phase(o: Orchestrator) -> Phase:
                 f'$version = "{MESA_DIST_WIN_VERSION}"',
                 '$url = "https://github.com/pal1000/mesa-dist-win/releases/download/$version/mesa3d-$version-release-msvc.7z"',
                 "Invoke-WebRequest -Uri $url -OutFile mesa.7z",
+                f'$expected = "{MESA_DIST_WIN_SHA256}"',
+                "$actual = (Get-FileHash mesa.7z -Algorithm SHA256).Hash.ToLower()",
+                'if ($actual -ne $expected) { throw "mesa.7z: SHA-256 $actual, expected $expected" }',
                 "7z e mesa.7z x64/opengl32.dll x64/libgallium_wgl.dll -omesa -y",
                 'Copy-Item mesa/opengl32.dll "$env:SystemRoot/System32/opengl32sw.dll"',
                 'Copy-Item mesa/libgallium_wgl.dll "$env:SystemRoot/System32/libgallium_wgl.dll"',
