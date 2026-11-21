@@ -1,5 +1,32 @@
 # csorchestrator
 
+One Python script per project: run locally or as a generated CI, releases as binary packages
+
+<!-- cs-template:begin (this block is owned by cs-project-template: do not edit; the rest of the file is the project's) -->
+## Getting started
+
+Requires Python 3.11 or newer and Git.
+
+```bash
+./setup.sh                    # Windows: .\setup.ps1
+source .venv/bin/activate     # Windows: .\.venv\Scripts\Activate.ps1
+```
+
+`setup.sh` creates `.venv`, installs the project with its development tools, and installs the
+pre-commit hooks.
+
+Checks and tests:
+
+```bash
+pre-commit run --all-files
+pytest                        # --run-all: every test, as CI; --run=<marker>: an opt-in group (tests/conftest.py)
+```
+
+The shared files (setup, checks, CI, agent rules) come from
+[cs-project-template](https://github.com/cscosine/cs-project-template); to bring them to its latest version, on a
+branch: `copier update --defaults`.
+<!-- cs-template:end -->
+
 ## 📦 Project Overview
 
 csorchestrator is a centralized project manager
@@ -31,33 +58,6 @@ csorchestrator/
 ├── open-code.sh / open-code.ps1     # open VS Code with the virtual env activated
 └── README.md                        # this file
 ```
-
----
-
-<!-- cs-template:begin (this block is owned by cs-project-template: do not edit; the rest of the file is the project's) -->
-## Getting started
-
-Requires Python 3.11 or newer and Git.
-
-```bash
-./setup.sh                    # Windows: .\setup.ps1
-source .venv/bin/activate     # Windows: .\.venv\Scripts\Activate.ps1
-```
-
-`setup.sh` creates `.venv`, installs the project with its development tools, and installs the
-pre-commit hooks.
-
-Checks and tests:
-
-```bash
-pre-commit run --all-files
-pytest                        # --run-all: every test, as CI; --run=<marker>: an opt-in group (tests/conftest.py)
-```
-
-The shared files (setup, checks, CI, agent rules) come from
-[cs-project-template](https://github.com/cscosine/cs-project-template); to bring them to its latest version, on a
-branch: `copier update --defaults`.
-<!-- cs-template:end -->
 
 ---
 
@@ -188,7 +188,6 @@ After installation (`pip install -e .`), you can:
     from csorchestrator.foundation.core.report import Report
     from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
 
-
     def create_orchestrator() -> OptionalOrchestratorWithReport:
         report = Report()
 
@@ -216,11 +215,9 @@ After installation (`pip install -e .`), you can:
 
         return OptionalOrchestratorWithReport.createResultAndReport(o, report)
 
-
     def main(argv: Sequence[str] | None = None) -> int:
         script_path = str(Path(__file__).resolve())
         return orchestrator_main_with_default_run(script_path, argv)
-
 
     if __name__ == "__main__":
         sys.exit(main())

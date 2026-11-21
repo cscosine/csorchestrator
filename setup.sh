@@ -12,11 +12,12 @@ usage() {
   cat <<USAGE
 Usage: ./setup.sh [--python=<interpreter>]
 
-  --python=<interpreter>        Python used to create .venv (default: python3, at least 3.11)
+  --python=<interpreter>        Python used to create .venv (default: python3 when it is 3.11 or newer, otherwise
+                                  the newest of python3.14 ... python3.11 found)
 USAGE
 }
 
-PYTHON="python3"
+PYTHON=""
 for arg in "$@"; do
   case "${arg}" in
     --python=*) PYTHON="${arg#*=}" ;;
@@ -25,7 +26,15 @@ for arg in "$@"; do
   esac
 done
 
-echo "Using Python: ${PYTHON}"
+recent_enough() { command -v "$1" >/dev/null 2>&1 && "$1" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)'; }
+if [[ -z "${PYTHON}" ]]; then
+  for candidate in python3 python3.14 python3.13 python3.12 python3.11; do
+    if recent_enough "${candidate}"; then PYTHON="${candidate}"; break; fi
+  done
+  PYTHON="${PYTHON:-python3}"
+fi
+
+echo "Using Python: ${PYTHON} ($("${PYTHON}" --version 2>&1))"
 
 if ! "${PYTHON}" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)'; then
   echo "Error: Python 3.11 or newer is required."

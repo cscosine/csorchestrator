@@ -1,16 +1,16 @@
-# Mixed file. Owned by the project: [project] and its sub-tables, [tool.setuptools], and every table after the
+# Mixed file. Owned by the project: [project] and its sub-tables, and every table after the
 # "project" marker at the end. Owned by the project template (cs-project-template, change it there): [build-system]
 # and the tables between the "template" markers. Never edit a template line here: `copier update` keeps the project
 # lines and replaces the template ones.
 
 [build-system]
-requires = ["setuptools>=77", "wheel"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "csorchestrator"
 version = "0.1.0"
-description = "orchestrator for projects config, build, deployment"
+description = "One Python script per project: run locally or as a generated CI, releases as binary packages"
 authors = [
   { name = "cscosine-dev", email = "cscosine@gmail.com" }
 ]
@@ -33,17 +33,19 @@ dev = [
     "pytest>=9",
     "pytest-cov>=7",
     "mypy>=1.20",
-    "ruff>=0.4",
+    "ruff>=0.15",
     "pre-commit>=4",
     "import-linter[ui]>=2.11",
     "types-PyYAML",
+    "copier>=9.4",
     # project: below
 ]
 
+# === template: begin =================================================================================================
+
 [tool.setuptools.packages.find]
 where = ["src"]
-
-# === template: begin =================================================================================================
+exclude = ["tests", "tests.*"]
 
 [tool.ruff]
 line-length = 120
@@ -59,8 +61,7 @@ quote-style = "double"
 
 [tool.mypy]
 mypy_path = "src"
-
-# csorchestrator workspace
+# the csorchestrator workspace
 exclude = "^workspace/"
 python_version = "3.11"
 # strict: no implicit Any, strict optional, unused ignores reported
