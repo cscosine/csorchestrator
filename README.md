@@ -34,153 +34,30 @@ csorchestrator/
 
 ---
 
-## 🛠 Development Setup
+<!-- cs-template:begin (this block is owned by cs-project-template: do not edit; the rest of the file is the project's) -->
+## Getting started
 
-### ⚡ Quick Start
-
-#### Fastest Way (Using Setup Scripts)
-
-**LINUX/MACOS:**
-```bash
-./setup.sh              # Run ONCE to set up venv, deps, and pre-commit hooks
-./open-code.sh         # Open VS Code with venv activated
-```
-
-or
-```
-source ./open-code.sh         # Open VS Code with venv activated
-```
-to also keep the terminal with `venv` activated available
-
-**Windows (PowerShell):**
-```powershell
-.\\setup.ps1           # Run ONCE to set up venv, deps, and pre-commit hooks
-.\\open-code.ps1      # Open VS Code with venv activated
-```
-
-- **`setup.sh` / `setup.ps1`** _(one-time only)_ – Automates: create venv, install deps, install pre-commit hooks
-- **`open-code.sh` / `open-code.ps1`** _(convenient shortcut)_ – Activates the virtual environment and opens VS Code (useful for subsequent sessions)
-
-#### Manual Step-by-Step
+Requires Python 3.11 or newer and Git.
 
 ```bash
-# 1. Clone repository
-git clone git@github.com:cscosine/csorchestrator.git
-cd csorchestrator
+./setup.sh                    # Windows: .\setup.ps1
+source .venv/bin/activate     # Windows: .\.venv\Scripts\Activate.ps1
+```
 
-# 2. Create virtual environment
-python3.XX -m venv .venv # 3.XX >= 3.11
-source .venv/bin/activate
+`setup.sh` creates `.venv`, installs the project with its development tools, and installs the
+pre-commit hooks.
 
-# 3. Install package in editable mode with dev dependencies
-pip install -e .[dev]
+Checks and tests:
 
-# this
-# - Installs the project `.` in editable mode (because of `-e`)
-# - Installs the optional dependency group dev normally.
-
-# 4. Run tests directly (package is now importable)
-pytest
-
-# 5. Or use pre-commit hooks
-pre-commit install
+```bash
 pre-commit run --all-files
+pytest                        # --run-all: every test, as CI; --run=<marker>: an opt-in group (tests/conftest.py)
 ```
 
----
-
-
-### 🌍 Detailed Setup
-
-If you prefer step-by-step instructions:
-
-#### Clone Repository
-
-``` bash
-git clone git@github.com:cscosine/csorchestrator.git
-```
-
-or
-
-``` bash
-git clone https://github.com/cscosine/csorchestrator.git
-```
-
----
-
-### Create Virtual Environment
-
-``` bash
-python -m venv .venv
-source .venv/bin/activate
-```
-_Note_: You may need `python3` instead of `python`.
-
-On Windows:
-
-``` bash
-.venv\Scripts\activate
-```
-
-or for PowerShell
-
-``` bash
-.venv\Scripts\activate.ps1
-```
-
----
-
-### Install Development Dependencies
-
-All development tools are listed as optional dependencies in `pyproject.toml`:
-
-```bash
-pip install -e .[dev]
-```
-
-This installs:
-- `pytest` - Testing framework
-- `mypy` - Static type checking
-- `ruff` - Linting and formatting
-- `pre-commit` - Git hook automation
-
-
----
-
-### Install Pre-Commit Hooks
-
-``` bash
-pre-commit install
-```
-
-Pre-commit hooks run automatically before each commit.
-
----
-
-### Bump precommit hooks to last version
-
-``` bash
-pre-commit autoupdate
-```
-
-will update the `rev` version in `.pre-commit-config.yaml`
-
-or
-
-``` bash
-pre-commit autoupdate --repo https://github.com/pre-commit/mirrors-mypy
-```
-
-to bump version of a specific repo only
-
-
----
-
-### 🔍 Run Pre-Commit Manually
-
-``` bash
-pre-commit run --all-files
-```
+The shared files (setup, checks, CI, agent rules) come from
+[cs-project-template](https://github.com/cscosine/cs-project-template); to bring them to its latest version, on a
+branch: `copier update --defaults`.
+<!-- cs-template:end -->
 
 ---
 

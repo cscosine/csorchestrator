@@ -118,7 +118,7 @@ as a reference before adding a new step.
 ### 5. Running the Tests
 
 - pytest config lives in `pyproject.toml` (`[tool.pytest.ini_options]`); markers: `slow`, `git`, `requires`.
-  `conftest.py` adds `--run-all`, `--run-slow`, `--run-git`, `--requires-mandatory`.
+  `conftest.py` (template) adds `--run-all` and `--run=<marker>`; `tests/conftest.py` declares the opt-in markers `slow` and `git` (`--run=slow`, `--run=git`) and registers `requires`.
 - Slow/git tests are **skipped by default** — do not report them as failures.
 - The `git` tests need the `csorchestratorTestRepo` fixture; if clone/checkout behavior changes, regenerate
   the fixture with `tools/regenerate_test_repo.py` and update `initial_commit_sha` in
