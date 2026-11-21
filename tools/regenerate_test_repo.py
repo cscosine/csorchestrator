@@ -105,7 +105,7 @@ def main() -> int:
 
     try:
         repo = Repo.init(tmp_dir)
-        _ = repo.create_remote("origin", url)
+        _ = repo.create_remote("origin", url.repo_url())
 
         initial_sha = build_repo(tmp_dir, report)
         push_all(repo, report)

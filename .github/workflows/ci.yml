@@ -1,10 +1,14 @@
+# Owned by the project template (cs-project-template): change it there.
+# Coverage: the packages of [tool.coverage.run] source in pyproject.toml.
 name: CI
 
 on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
+  # release tags: called by a release workflow of the project
+  workflow_call:
 
 jobs:
   checks:
@@ -13,13 +17,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        # every runner image on one Python version; the other Python versions on one image; the minimum dependencies
+        # on the oldest image and Python version
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-26.04, macos-15, macos-26, windows-2022, windows-2025-vs2026]
+        python-version: ["3.14"]
         deps: ["latest"]
         include:
-          - os: ubuntu-latest
-            python-version: "3.11"
-            deps: "minimum"
+          - { os: ubuntu-24.04, python-version: "3.11", deps: "latest" }
+          - { os: ubuntu-24.04, python-version: "3.12", deps: "latest" }
+          - { os: ubuntu-24.04, python-version: "3.13", deps: "latest" }
+          - { os: ubuntu-24.04, python-version: "3.15", deps: "latest" }
+          - { os: ubuntu-22.04, python-version: "3.11", deps: "minimum" }
 
     steps:
       - uses: actions/checkout@v6
@@ -27,28 +35,47 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "pip"  # ✅ built-in pip cache
-          cache-dependency-path: |
-            pyproject.toml
-            setup.cfg
-            requirements*.txt
-            constraints-minimum.txt
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
 
+      # MSVC on PATH: tests may compile, and pip may build a Rust extension from source with the MSVC linker
       - name: Setup MSVC environment
         if: runner.os == 'Windows'
         uses: TheMrMilchmann/setup-msvc-dev@v4
         with:
           arch: x64
 
+      # the minimum job: every lower bound of pyproject.toml (dependencies and dev tools) pinned, ">=X" becomes "==X"
+      # (constraints take no extras: "import-linter[ui]>=2.11" becomes "import-linter==2.11")
+      - name: Pin the minimum versions
+        if: matrix.deps == 'minimum'
+        run: |
+          python - > "$RUNNER_TEMP/constraints-minimum.txt" <<'EOF'
+          import re
+          import tomllib
+
+          with open("pyproject.toml", "rb") as f:
+              project = tomllib.load(f)["project"]
+          requirements = project.get("dependencies", []) + project.get("optional-dependencies", {}).get("dev", [])
+          for requirement in requirements:
+              match = re.match(r"\s*([A-Za-z0-9_.-]+)(\[[^\]]*\])?\s*>=\s*([^,;\s]+)", requirement)
+              if match:
+                  print(f"{match.group(1)}=={match.group(3)}")
+          EOF
+          cat "$RUNNER_TEMP/constraints-minimum.txt"
+        shell: bash
+
+      # pwsh, not bash: Git Bash puts Git's usr/bin first on PATH, and its link.exe is found instead of the MSVC one
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ "${{ matrix.deps }}" = "minimum" ]; then
-            pip install -e .[dev] -c constraints-minimum.txt
-          else
-            pip install -e .[dev]
-          fi
-        shell: bash
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ("${{ matrix.deps }}" -eq "minimum") {
+            python -m pip install -e ".[dev]" -c "$env:RUNNER_TEMP/constraints-minimum.txt"
+          } else {
+            python -m pip install -e ".[dev]"
+          }
+        shell: pwsh
 
       - name: Run pre-commit
         run: pre-commit run --all-files
@@ -56,31 +83,43 @@ jobs:
       - name: Run tests with coverage
         env:
           ACTIONS_ORG_ACCESS: ${{ secrets.ACTIONS_ORG_ACCESS }}
+          REPORT: coverage-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.deps }}
         run: |
           pytest \
             --run-all \
             --log-cli-level=INFO \
-            --cov=csorchestrator \
+            --cov \
             --cov-branch \
-            --cov-report=xml:coverage-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.deps }}.xml \
-            --cov-report=html:htmlcov-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.deps }} \
+            --cov-report=xml:"${REPORT}.xml" \
+            --cov-report=html:"htmlcov-${REPORT}" \
             --cov-report=term-missing \
-            | tee coverage-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.deps }}.txt
+            | tee "${REPORT}.txt"
         shell: bash
 
       - name: Upload coverage HTML as artifact
         uses: actions/upload-artifact@v6
         with:
           name: coverage-html-${{ matrix.os }}-py${{ matrix.python-version }}-${{ matrix.deps }}
-          path: htmlcov-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.deps }}
+          path: htmlcov-coverage-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.deps }}
 
       - name: Add coverage to summary
+        env:
+          REPORT: coverage-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.deps }}
         run: |
           {
             echo "## 🧪 Coverage (${{ matrix.os }} / Python ${{ matrix.python-version }} / ${{ matrix.deps }})"
             echo ""
             echo '```'
-            cat "coverage-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.deps }}.txt"
+            cat "${REPORT}.txt"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
         shell: bash
+
+  # the one stable check name for rulesets: green only when every job of the matrix is
+  ci-ok:
+    if: always()
+    needs: [checks]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every job succeeded
+        run: test "${{ needs.checks.result }}" = "success"

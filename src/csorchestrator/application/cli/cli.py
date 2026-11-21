@@ -58,21 +58,21 @@ class CLIConfig:
     markdown_path: Path | None = None
 
 
-@click.group(help="csorchestrator command line interface")  # type: ignore[untyped-decorator]
-@click.option(  # type: ignore[untyped-decorator]
+@click.group(help="csorchestrator command line interface")
+@click.option(
     "--sink",
     type=click.Choice(SINK_TYPES),
     default="colorama",
     show_default=True,
     help="Select reporter sink implementation",
 )
-@click.option(  # type: ignore[untyped-decorator]
+@click.option(
     "--markdown",
     type=click.Path(dir_okay=False, path_type=Path),
     default=None,
     help="Write execution report as markdown file",
 )
-@click.pass_context  # type: ignore[untyped-decorator]
+@click.pass_context
 def app(ctx: click.Context, sink: str, markdown: Path | None = None) -> None:
     config = CLIConfig(sink=cast(SinkType, sink), markdown_path=markdown)
     ctx.ensure_object(dict)
@@ -209,19 +209,19 @@ def describe_project_script(
     return 0
 
 
-@app.command("run")  # type: ignore[untyped-decorator]
+@app.command("run")
 @click.argument(
     "script_path",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-)  # type: ignore[untyped-decorator]
+)
 @click.option(
     "--target-folder",
     "-t",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     default=None,
     help="Base folder for orchestrator execution. Defaults to the project script location.",
-)  # type: ignore[untyped-decorator]
-@click.pass_context  # type: ignore[untyped-decorator]
+)
+@click.pass_context
 def run(ctx: click.Context, script_path: Path, target_folder: Path | None) -> int:
     """Load a Python project script and execute its create_orchestrator() result."""
     config: CLIConfig = ctx.obj["config"]
@@ -231,19 +231,19 @@ def run(ctx: click.Context, script_path: Path, target_folder: Path | None) -> in
     return execute_project_script(script_path, target_folder, reporter)
 
 
-@app.command("generate-github-workflow")  # type: ignore[untyped-decorator]
+@app.command("generate-github-workflow")
 @click.argument(
     "script_path",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-)  # type: ignore[untyped-decorator]
+)
 @click.option(
     "--output",
     "-o",
     type=click.Path(dir_okay=False, path_type=Path),
     default=None,
     help="Write workflow to this file. Defaults to stdout.",
-)  # type: ignore[untyped-decorator]
-@click.pass_context  # type: ignore[untyped-decorator]
+)
+@click.pass_context
 def gen_wf(ctx: click.Context, script_path: Path, output: Path | None) -> int:
     """Load a Python project script and create the gitHub workflow for create_orchestrator() result."""
     config: CLIConfig = ctx.obj["config"]
@@ -253,12 +253,12 @@ def gen_wf(ctx: click.Context, script_path: Path, output: Path | None) -> int:
     return generate_github_workflow_project_script(script_path, output, reporter)
 
 
-@app.command("describe")  # type: ignore[untyped-decorator]
+@app.command("describe")
 @click.argument(
     "script_path",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-)  # type: ignore[untyped-decorator]
-@click.pass_context  # type: ignore[untyped-decorator]
+)
+@click.pass_context
 def describe(ctx: click.Context, script_path: Path) -> int:
     """Load a Python project script and emit only its orchestrator description (no execution)."""
     config: CLIConfig = ctx.obj["config"]
@@ -330,7 +330,7 @@ def main(argv: list[str] | None = None) -> int:
 
     except click.ClickException as exc:
         exc.show()
-        return cast(int, exc.exit_code)
+        return exc.exit_code
 
     except click.Abort:
         click.echo("Aborted!", err=True)

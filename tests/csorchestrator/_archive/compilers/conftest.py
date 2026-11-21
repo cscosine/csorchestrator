@@ -12,8 +12,6 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     if run_all:
         return  # 👈 CRITICAL: disable ALL requires logic
 
-    requires_mandatory = config.getoption("--requires-mandatory")
-
     for item in items:
         marker = item.get_closest_marker("requires")
         if not marker:
@@ -22,14 +20,6 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
         # supports multiple args: @requires("cl")
         tool = marker.args[0]
 
-        if has_tool(tool):
-            continue
-
-        msg = f"Required tool missing: {tool}"
-
-        if requires_mandatory:
-            # tool not present → HARD FAIL
-            raise pytest.UsageError(msg)
-        else:
-            # local mode → SKIP
-            item.add_marker(pytest.mark.skip(reason=msg))
+        if not has_tool(tool):
+            # local mode → SKIP (--run-all, as CI: run, and fail when the tool is missing)
+            item.add_marker(pytest.mark.skip(reason=f"Required tool missing: {tool}"))
