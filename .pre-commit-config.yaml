@@ -1,6 +1,9 @@
 # Owned by the project template (cs-project-template): change it there.
 # Project hooks: between the `project: begin` / `project: end` markers (they merge cleanly on `copier update`).
 fail_fast: false # using true is too annoying in development
+# --- project: begin (files no hook touches, a regex on the path: e.g. the upstream files of a copied library) ---
+# exclude: ^(docs|vendor)/
+# --- project: end ---
 
 repos:
   # run pre-commit autoupdate to update these versions
