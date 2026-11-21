@@ -49,6 +49,9 @@ repos:
     rev: v20.1.4
     hooks:
       - id: clang-format
+        # C, C++, CUDA, Objective-C sources only: not JSON or JavaScript (clang-format's other languages), which would
+        # touch generated files such as CMakePresets.json
+        types_or: [c, c++, cuda, objective-c]
         exclude: '\.m$'
         args: ["-style=file"]
 
