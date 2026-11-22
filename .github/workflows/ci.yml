@@ -4,9 +4,9 @@ name: CI
 
 on:
   workflow_dispatch:
-  # weekly run on main, Mon 01:00 CET: after csqt6, before the build train (third_party_base_libs, 01:45 CET)
+  # weekly run on main, Sun 20:15 CET: the tools, after the hooks and the template (20:00), before csqt6 (20:50)
   schedule:
-    - cron: "7 0 * * 1"
+    - cron: "15 19 * * 0"
   pull_request:
   push:
     branches: [main]
