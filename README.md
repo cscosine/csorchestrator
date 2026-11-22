@@ -183,10 +183,24 @@ After installation (`pip install -e .`), you can:
 
     from csorchestrator.application.cli.cli import orchestrator_main_with_default_run
     from csorchestrator.application.factory.factory import OptionalOrchestratorWithReport
-    from csorchestrator.application.recipes.checkout_build import checkout_build_and_archive_repos
+    from csorchestrator.application.recipes.checkout_build import (
+        build_repos,
+        checkout_repos,
+        create_and_upload_artifacts,
+    )
     from csorchestrator.application.recipes.create_orchestrator import create_default_orchestrator
+    from csorchestrator.application.recipes.cscmake_release import create_cscmake_release_archive
+    from csorchestrator.application.recipes.repos_config import (
+        RepoRefBuildPublishConfig,
+        RepoRefBuildPublishConfigDict,
+        extract_build_config_dict,
+        extract_repo_list_build_non_none,
+        extract_repo_ref_dict,
+    )
+    from csorchestrator.domain.orchestrator.workflow_config import Cron, DayOfWeek
     from csorchestrator.foundation.core.report import Report
     from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
+
 
     def create_orchestrator() -> OptionalOrchestratorWithReport:
         report = Report()
@@ -194,36 +208,55 @@ After installation (`pip install -e .`), you can:
         base_target_dir = Path("workspace")
         base_install_dir = base_target_dir / Path("install")
 
-        # repo name -> (git ref, build config)
-        repos: dict[str, tuple[str, BuildConfig | None]] = {
-            "fmt": ("dev", BuildConfig.DEBUG_RELEASE),
-            "Catch2": ("dev", BuildConfig.DEBUG_RELEASE),
+        # repo name -> git ref, build config (None: checkout only), publish mode
+        repos: RepoRefBuildPublishConfigDict = {
+            "fmt": RepoRefBuildPublishConfig("main", BuildConfig.DEBUG_RELEASE),
+            "Catch2": RepoRefBuildPublishConfig("main", BuildConfig.DEBUG_RELEASE),
         }
 
         o = create_default_orchestrator(
             name="my-project",
             version="0.1.0",
             base_install_dir=base_install_dir,
+            schedule=Cron.weekly(DayOfWeek.SUN, hour=20),  # optional: a weekly CI run (UTC)
         )
 
-        checkout_build_and_archive_repos(
-            o,
+        checkout_repos(
+            orchestrator=o,
             base_target_dir=base_target_dir,
-            base_install_dir=base_install_dir,
-            repo_ref_build_type_list=repos,
+            repo_ref_dict=extract_repo_ref_dict(repos),
+            release_archive_list=[create_cscmake_release_archive("1.0.0")],  # csCMake, next to the repos
         )
 
-        return OptionalOrchestratorWithReport.createResultAndReport(o, report)
+        build_repos(
+            orchestrator=o,
+            base_target_dir=base_target_dir,
+            repo_build_config_dict=extract_build_config_dict(repos),
+        )
+
+        create_and_upload_artifacts(
+            orchestrator=o,
+            base_install_dir=base_install_dir,
+            repos_auto_search_list=extract_repo_list_build_non_none(extract_build_config_dict(repos)),
+        )
+
+        if report.has_errors():
+            return OptionalOrchestratorWithReport.create_report(report)
+        return OptionalOrchestratorWithReport.create_result_and_report(o, report)
+
 
     def main(argv: Sequence[str] | None = None) -> int:
         script_path = str(Path(__file__).resolve())
         return orchestrator_main_with_default_run(script_path, argv)
 
+
     if __name__ == "__main__":
         sys.exit(main())
     ```
 
-    See the `3rdPartyBaseLibs` / `csQt6` repositories for full production examples.
+    See `third_party_base_libs_project.py` / `csfoundation_project.py` in the
+    [third_party_base_libs](https://github.com/cscosine/third_party_base_libs) /
+    [csfoundation](https://github.com/cscosine/csfoundation) repositories for full production examples.
 
 2. **Use the CLI:** the project script is an executable entry point:
 
