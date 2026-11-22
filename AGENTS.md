@@ -26,3 +26,10 @@ there, then `copier update --defaults`; never edit its parts here):
 ## csorchestrator
 
 One Python script per project: run locally or as a generated CI, releases as binary packages
+
+- **Developing csorchestrator**: [.claude/skills/csorchestrator-development/SKILL.md](.claude/skills/csorchestrator-development/SKILL.md).
+- **The skill for the projects using csorchestrator**: [agent-plugin/skills/csorchestrator-usage/SKILL.md](agent-plugin/skills/csorchestrator-usage/SKILL.md),
+  the Claude Code plugin `csorchestrator` of the `cscosine` marketplace (`cscosine/.github`). A change of the recipe
+  API, the CLI or the generated files updates it in the same PR; its `version` in
+  `agent-plugin/.claude-plugin/plugin.json` follows the csorchestrator version. Test it with
+  `claude --plugin-dir agent-plugin`.

@@ -1,0 +1,7 @@
+{
+  "name": "csorchestrator",
+  "description": "How a cscosine project uses csorchestrator: its project script (*_project.py), providers of prebuilt libraries, the generated GitHub workflow, releases and manifests, running it locally.",
+  "version": "0.1.1",
+  "author": { "name": "cscosine" },
+  "repository": "https://github.com/cscosine/csorchestrator"
+}
