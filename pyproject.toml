@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "csorchestrator"
-version = "0.1.0"
+version = "0.1.1"
 description = "One Python script per project: run locally or as a generated CI, releases as binary packages"
 authors = [
   { name = "cscosine-dev", email = "cscosine@gmail.com" }
