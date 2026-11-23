@@ -55,9 +55,6 @@ pre-commit install
 
 echo "Setup complete."
 echo ""
-echo "Next: "
+echo "Next:"
 echo "  source .venv/bin/activate"
-echo "  code ."
-echo ""
-echo "Or: "
-echo "  ./open-code.sh"
+echo "  ./open-code.sh   # VS Code with the venv"

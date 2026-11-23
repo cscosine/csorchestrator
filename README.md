@@ -25,6 +25,10 @@ pytest                        # --run-all: every test, as CI; --run=<marker>: an
 The shared files (setup, checks, CI, agent rules) come from
 [cs-project-template](https://github.com/cscosine/cs-project-template); to bring them to its latest version, on a
 branch: `copier update --defaults`.
+
+## Working in VS Code
+
+`./open-code.sh` (Windows: `.\open-code.ps1`) opens VS Code on the repository with the venv active.
 <!-- cs-template:end -->
 
 ## 📦 Project Overview
