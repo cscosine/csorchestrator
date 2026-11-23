@@ -44,6 +44,17 @@ Today (2026-11-10) csCMake has 42 variants; csorchestrator lacks Ubuntu 26.04 an
 Later: follow `variants.json` instead of keeping the copy (generate the matrix from it, or keep the copy and let the
 drift test catch every change).
 
+## Future: the workspace folders from the csCMake layout
+
+The recipe spells the folders (`base_target_dir`, `base_install_dir`, `base_libs_dir`, `base_build_dir`, the deploy
+archives); they must agree with csCMake's layout (standalone: `<project>/_csw`). The check of `base_target_dir` in the
+CMake workflow step (`portable/cscmake_layout.py`, local runs only) is in the wrong place: csCMake knowledge in the CMake
+step, nothing at workflow generation. The right way, for the rewrite (cscosine/.github
+`plans/PLAN-csorchestrator-architecture.md`, B14, R4): a csCMake-glue `cscmake_workspace(<project dir>)` next to
+`application/recipes/cscmake_release.py` gives every folder from the project's `csCMakeProjectSetup.json`, the recipe
+helpers take it, the step check goes. Another disk for the workspace: a machine-local setting
+(`cs-workspace.local.toml`, B12) realised as a link `<project>/_csw` -> the folder, made by csorchestrator.
+
 ## Future: read what the build declares, instead of repeating it
 
 csCMake (`dev`, deployments) writes `cs-deployments.json` in the top build folder at configure time: each deployment
