@@ -124,7 +124,6 @@ def build_repos(
                 description="CMake workflow for ./",
                 source_dir=Path("./").as_posix(),
                 config=build_self,
-                workspace_root=base_target_dir.as_posix(),
             )
         )
 

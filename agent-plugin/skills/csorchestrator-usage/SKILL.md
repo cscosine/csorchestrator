@@ -70,7 +70,8 @@ add_gui_deployment_smoke_test_return_0(o, deployment="app", executable="bin/app"
 ```
 
 `base_target_dir` is the workspace of csCMake's standalone layout, `_csw` (`${sourceDir}/_csw/csCMake/...` in the
-project's `csCMakeProjectSetup.json`): a local run stops before building the project's own sources when they differ.
+project's `csCMakeProjectSetup.json`), and the other folders are in it (`_csw/install`, `_csw/libs`, ...): the recipe
+writes them, they must agree with the layout.
 
 | Need | Where |
 |---|---|

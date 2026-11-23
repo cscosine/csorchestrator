@@ -39,7 +39,6 @@ from csorchestrator.frontend.local_execution.context_local_execution import (
 )
 from csorchestrator.frontend.local_execution.orchestrator_visitor_local_executor import StepCapabilityLocalExecution
 from csorchestrator.frontend.step.step_custom_command import execute_command, get_if_str
-from csorchestrator.portable.cscmake_layout import check_standalone_workspace
 
 
 @dataclass
@@ -66,8 +65,6 @@ class StepCMakeWorkflowCapabilityLocalExecution(StepCapabilityLocalExecution):
 class StepCMakeWorkflow(StepBase):
     source_dir: str
     config: BuildConfig
-    # the recipe's base_target_dir, when the source is the project's own: checked against a standalone csCMake layout
-    workspace_root: str | None = None
 
     def __post_init__(self) -> None:
         self.add_capability(StepCMakeWorkflowCapabilityGithubWorkflow(self), StepCapabilityGithubWorkflow)
@@ -135,14 +132,6 @@ def execute_step_cmake_workflow(
     assert res_or_err.value is not None
     context_os_architecture_compiler_generator, workflow_configs = res_or_err.value
     assert context_os_architecture_compiler_generator is not None
-
-    if step.workspace_root is not None:
-        layout_error = check_standalone_workspace(
-            context.base_folder_path / step.source_dir, context.base_folder_path / step.workspace_root
-        )
-        if layout_error is not None:
-            report.append_error(layout_error)
-            return report
 
     for workflow_config in workflow_configs:
         workflow_name = workflow_name_from_description(workflow_config)

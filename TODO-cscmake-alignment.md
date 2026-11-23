@@ -47,12 +47,12 @@ drift test catch every change).
 ## Future: the workspace folders from the csCMake layout
 
 The recipe spells the folders (`base_target_dir`, `base_install_dir`, `base_libs_dir`, `base_build_dir`, the deploy
-archives); they must agree with csCMake's layout (standalone: `<project>/_csw`). The check of `base_target_dir` in the
-CMake workflow step (`portable/cscmake_layout.py`, local runs only) is in the wrong place: csCMake knowledge in the CMake
-step, nothing at workflow generation. The right way, for the rewrite (cscosine/.github
+archives); they must agree with csCMake's layout (standalone: `<project>/_csw`), nothing checks it. A check inside the
+CMake workflow step would be in the wrong place (csCMake knowledge in the CMake step, local runs only, nothing at
+workflow generation; 0.1.1 had one, removed in 0.1.2). The right way, for the rewrite (cscosine/.github
 `plans/PLAN-csorchestrator-architecture.md`, B14, R4): a csCMake-glue `cscmake_workspace(<project dir>)` next to
 `application/recipes/cscmake_release.py` gives every folder from the project's `csCMakeProjectSetup.json`, the recipe
-helpers take it, the step check goes. Another disk for the workspace: a machine-local setting
+helpers take it. Another disk for the workspace: a machine-local setting
 (`cs-workspace.local.toml`, B12) realised as a link `<project>/_csw` -> the folder, made by csorchestrator.
 
 ## Future: read what the build declares, instead of repeating it
