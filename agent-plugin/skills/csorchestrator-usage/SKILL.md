@@ -54,20 +54,23 @@ The shape every project uses (see `csImgTracker_project.py`, `csfoundation_proje
 ```python
 o = create_default_orchestrator(
     name="myProject", version="0.2.0",              # the release version: also in pyproject.toml, project(VERSION)
-    base_install_dir=Path("workspace/install"),
+    base_install_dir=Path("_csw/install"),
     schedule=Cron.weekly(DayOfWeek.MON, hour=4, minute=40),   # UTC; its own slot of the weekly queue
     additional_files_list=[Path("myProject_config.py")],      # a provider: shipped to its consumers
     additional_matrix_list=get_context_list_linux("ubuntu26.04") + get_context_list_macos("macos15"),
 )
-checkout_repos(o, base_target_dir=Path("workspace"),
+checkout_repos(o, base_target_dir=Path("_csw"),
                repo_ref_dict=extract_repo_ref_dict(repos),                      # inner libraries, at "main"
-               release_archive_list=[create_cscmake_release_archive("1.0.0")])  # csCMake by release
-install_<name>_build_dependencies(...)          # from <name>_config.py: providers' packages into workspace/libs
-build_repos(o, base_target_dir=Path("workspace"), repo_build_config_dict=..., build_self=BuildConfig.DEBUG_RELEASE)
+               release_archive_list=[create_cscmake_release_archive("1.1.0")])  # csCMake by release
+install_<name>_build_dependencies(...)          # from <name>_config.py: providers' packages into _csw/libs
+build_repos(o, base_target_dir=Path("_csw"), repo_build_config_dict=..., build_self=BuildConfig.DEBUG_RELEASE)
 create_and_upload_artifacts(o, base_install_dir=..., repos_auto_search_list=[...])
 create_and_upload_deployments(o, base_build_dir=..., build_config=..., output_dir=...)   # csCMake cs_deployment
 add_gui_deployment_smoke_test_return_0(o, deployment="app", executable="bin/app", ...)  # runs the deployment
 ```
+
+`base_target_dir` is the workspace of csCMake's standalone layout, `_csw` (`${sourceDir}/_csw/csCMake/...` in the
+project's `csCMakeProjectSetup.json`): a local run stops before building the project's own sources when they differ.
 
 | Need | Where |
 |---|---|

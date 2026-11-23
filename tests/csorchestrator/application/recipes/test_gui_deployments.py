@@ -18,14 +18,14 @@ from csorchestrator.frontend.step.step_custom_command import StepWinPSCommand
 from csorchestrator.frontend.step.step_deployments import StepRunDeployment
 
 COMMON = {
-    "base_build_dir": Path("workspace/build"),
+    "base_build_dir": Path("_csw/build"),
     "build_config": BuildConfig.RELEASE,
-    "archives_dir": Path("workspace/deploy-archives"),
+    "archives_dir": Path("_csw/deploy-archives"),
 }
 
 
 def test_smoke_test_return_0_and_a_run_with_an_assessor_share_one_phase() -> None:
-    o = create_default_orchestrator(name="app", version="1.0.0", base_install_dir=Path("workspace/install"))
+    o = create_default_orchestrator(name="app", version="1.0.0", base_install_dir=Path("_csw/install"))
     add_gui_deployment_smoke_test_return_0(o, deployment="sample", executable="bin/sample", **COMMON)  # type: ignore[arg-type]
     add_gui_deployment_run(
         o,
@@ -65,7 +65,7 @@ def test_mesa_is_checked_against_its_sha256_before_use() -> None:
     """The software OpenGL of Mesa comes from a download: the step checks its SHA-256 and fails on a mismatch, before
     anything is extracted or copied."""
     assert re.fullmatch(r"[0-9a-f]{64}", MESA_DIST_WIN_SHA256)
-    o = create_default_orchestrator(name="app", version="1.0.0", base_install_dir=Path("workspace/install"))
+    o = create_default_orchestrator(name="app", version="1.0.0", base_install_dir=Path("_csw/install"))
     add_gui_deployment_smoke_test_return_0(o, deployment="sample", executable="bin/sample", **COMMON)  # type: ignore[arg-type]
     (phase,) = (p for p in o.phases if p.name == GUI_DEPLOYMENT_RUN_PHASE_NAME)
     (mesa,) = (s for s in phase.steps if isinstance(s, StepWinPSCommand))

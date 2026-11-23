@@ -87,7 +87,7 @@ def test_create_steps_to_get_libs_from_manifest_creates_one_step_per_lib_with_de
         orchestrator=orchestrator,
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
-        base_libs_dir=Path("workspace/libs"),
+        base_libs_dir=Path("_csw/libs"),
         mapping_function=identity_mapping_function,
         phase_name=DEFAULT_PHASE_NAME,
         dev=False,
@@ -112,7 +112,7 @@ def test_create_steps_to_get_libs_from_manifest_creates_one_step_per_lib_with_de
     assert catch2.project_tag == PROJECT_TAG
     assert catch2.org == "cscosine"
     assert catch2.project_name == PROJECT_NAME
-    assert catch2.base_libs_dir == Path("workspace/libs")
+    assert catch2.base_libs_dir == Path("_csw/libs")
     assert fmt.lib_name == "fmt"
     assert fmt.lib_version == "11.2.1"
 
@@ -125,7 +125,7 @@ def test_create_steps_to_get_libs_from_manifest_custom_phase_name():
         orchestrator=orchestrator,
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
-        base_libs_dir=Path("workspace/libs"),
+        base_libs_dir=Path("_csw/libs"),
         phase_name="get precompiled libs",
         mapping_function=identity_mapping_function,
         dev=False,
@@ -149,7 +149,7 @@ def test_create_steps_to_get_libs_from_manifest_errors_when_lib_has_multiple_ver
         orchestrator=orchestrator,
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
-        base_libs_dir=Path("workspace/libs"),
+        base_libs_dir=Path("_csw/libs"),
         mapping_function=identity_mapping_function,
         phase_name="",
         dev=False,
@@ -175,7 +175,7 @@ def test_create_steps_to_get_libs_from_manifest_lib_declared_only_in_one_variant
         orchestrator=orchestrator,
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
-        base_libs_dir=Path("workspace/libs"),
+        base_libs_dir=Path("_csw/libs"),
         mapping_function=identity_mapping_function,
         phase_name="",
         dev=False,
@@ -197,7 +197,7 @@ def test_create_steps_to_get_libs_from_manifest_empty_manifest_creates_empty_pha
         orchestrator=orchestrator,
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
-        base_libs_dir=Path("workspace/libs"),
+        base_libs_dir=Path("_csw/libs"),
         mapping_function=identity_mapping_function,
         phase_name=DEFAULT_PHASE_NAME,
         dev=False,
@@ -220,7 +220,7 @@ def test_create_steps_to_get_libs_from_manifest_subsample_with_lib_name_list():
         orchestrator=orchestrator,
         manifest_description=_manifest_description(),
         manifest_loaded=manifest,
-        base_libs_dir=Path("workspace/libs"),
+        base_libs_dir=Path("_csw/libs"),
         lib_name_list=["fmt"],
         mapping_function=identity_mapping_function,
         phase_name="",

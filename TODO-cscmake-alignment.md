@@ -68,7 +68,7 @@ installers), no csCMake code but more parsing.
 
 ## Future: run the deployments in CI (a step the project configures)
 
-The deployments made by the install (`workspace/deploy/<variant>/<project>/<name>-<config>`, csCMake `cs_deployment`)
+The deployments made by the install (`<workspace>/deploy/<variant>/<project>/<name>-<config>`, csCMake `cs_deployment`)
 can be run in CI, to prove they work on a machine without the build. A step the project adds in its script, e.g.:
 
 ```python

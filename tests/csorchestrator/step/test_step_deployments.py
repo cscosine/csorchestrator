@@ -271,9 +271,9 @@ def test_github_steps_of_the_archives() -> None:
     step = StepCreateDeploymentArchives(
         name="Create Deployment Archives",
         description="",
-        base_build_dir=Path("workspace/build"),
+        base_build_dir=Path("_csw/build"),
         build_config=BuildConfig.DEBUG_RELEASE,
-        output_dir=Path("workspace/deploy-archives"),
+        output_dir=Path("_csw/deploy-archives"),
     )
 
     steps = step_create_deployment_archives_to_githubwf(step, _job()).result_or([])
@@ -285,7 +285,7 @@ def test_github_steps_of_the_archives() -> None:
     compile(code, "create_deployment_archives.py", "exec")
     assert "from csorchestratorsdk.portable.deployments import" in code
     assert "build_config = 'debug-release'" in code
-    assert upload.with_path == ["workspace/deploy-archives/*.tar.gz", "workspace/deploy-archives/*.zip"]
+    assert upload.with_path == ["_csw/deploy-archives/*.tar.gz", "_csw/deploy-archives/*.zip"]
     assert upload.with_name.startswith("app-1.0.0-") and upload.with_name.endswith("-deployments")
 
 
@@ -295,9 +295,9 @@ def test_github_step_of_a_run() -> None:
         description="",
         deployment="app",
         command={OS.LINUX: ["xvfb-run", "-a", "{folder}/bin/app", "--smoke"], OS.WINDOWS: ["{folder}/bin/app.exe"]},
-        base_build_dir=Path("workspace/build"),
+        base_build_dir=Path("_csw/build"),
         build_config=BuildConfig.RELEASE,
-        archives_dir=Path("workspace/deploy-archives"),
+        archives_dir=Path("_csw/deploy-archives"),
         install_system_requirements=True,
         environment={"QT_OPENGL": "software"},
     )

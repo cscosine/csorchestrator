@@ -205,7 +205,8 @@ After installation (`pip install -e .`), you can:
     def create_orchestrator() -> OptionalOrchestratorWithReport:
         report = Report()
 
-        base_target_dir = Path("workspace")
+        # the csCMake standalone layout's workspace (<project>/_csw): checked when the project builds its own sources
+        base_target_dir = Path("_csw")
         base_install_dir = base_target_dir / Path("install")
 
         # repo name -> git ref, build config (None: checkout only), publish mode
