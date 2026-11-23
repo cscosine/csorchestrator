@@ -106,6 +106,24 @@ if (-not $workspaceRoot) {
 }
 $buildRoot = Join-Path $workspaceRoot "build"
 
+# the compiler family of a build, from the compiler CMake identified in it (CMakeFiles\<version>\CMakeCXXCompiler.cmake):
+# gcc, clang, appleclang, msvc, clang-cl; the short build folder names say none of them
+function CompilerFamily([string]$Dir) {
+    $file = Get-ChildItem -Path "$Dir\CMakeFiles\*\CMakeCXXCompiler.cmake" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -eq $file) { return "" }
+    $id = ""; $variant = ""
+    $m = Select-String -Path $file.FullName -Pattern '^set\(CMAKE_CXX_COMPILER_ID "(.*)"\)$' | Select-Object -First 1
+    if ($null -ne $m) { $id = $m.Matches[0].Groups[1].Value }
+    $m = Select-String -Path $file.FullName -Pattern '^set\(CMAKE_CXX_COMPILER_FRONTEND_VARIANT "(.*)"\)$' | Select-Object -First 1
+    if ($null -ne $m) { $variant = $m.Matches[0].Groups[1].Value }
+    if ($id -eq "GNU") { return "gcc" }
+    if ($id -eq "Clang" -and $variant -eq "MSVC") { return "clang-cl" }
+    if ($id -eq "Clang") { return "clang" }
+    if ($id -eq "AppleClang") { return "appleclang" }
+    if ($id -eq "MSVC") { return "msvc" }
+    return $id
+}
+
 # every build of this checkout: multi-config (<variant>\<name>) and single-config (<variant>\<name>\<config>)
 $builds = @()
 foreach ($root in @($buildRoot)) {
@@ -116,7 +134,10 @@ foreach ($root in @($buildRoot)) {
         $dir = $cache.DirectoryName
         $compiler = Split-Path (CacheValue $cache.FullName "CMAKE_CXX_COMPILER") -Leaf
         $relative = $dir.Substring($root.Length + 1)
-        if ($Filter -eq "" -or $relative -like "*$Filter*" -or $compiler -like "*$Filter*") { $builds += $dir }
+        $family = CompilerFamily $dir
+        if ($Filter -eq "" -or $relative -like "*$Filter*" -or $compiler -like "*$Filter*" -or ($family -ne "" -and $family -like "*$Filter*")) {
+            $builds += $dir
+        }
     }
 }
 
@@ -129,7 +150,7 @@ if ($builds.Count -eq 0) {
 }
 if ($builds.Count -gt 1) {
     Write-Host "Several builds of ${name}: choose one with a filter (a part of the folder name or of the compiler)."
-    $builds | ForEach-Object { Write-Host "  $_" }
+    $builds | ForEach-Object { Write-Host "  $_ ($(CompilerFamily $_))" }
     exit 1
 }
 

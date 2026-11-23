@@ -98,6 +98,26 @@ if [[ -z "$workspace_root" ]]; then
 fi
 build_root="$workspace_root/build"
 
+# the compiler family of a build, from the compiler CMake identified in it (CMakeFiles/<version>/CMakeCXXCompiler.cmake):
+# gcc, clang, appleclang, msvc, clang-cl; the short build folder names say none of them
+compiler_family() { # <build dir>
+  local file id variant
+  for file in "$1"/CMakeFiles/*/CMakeCXXCompiler.cmake; do
+    [[ -f "$file" ]] || continue
+    id="$(sed -n 's/^set(CMAKE_CXX_COMPILER_ID "\(.*\)")$/\1/p' "$file" | head -n 1)"
+    variant="$(sed -n 's/^set(CMAKE_CXX_COMPILER_FRONTEND_VARIANT "\(.*\)")$/\1/p' "$file" | head -n 1)"
+    case "$id:$variant" in
+      GNU:*) echo gcc ;;
+      Clang:MSVC) echo clang-cl ;;
+      Clang:*) echo clang ;;
+      AppleClang:*) echo appleclang ;;
+      MSVC:*) echo msvc ;;
+      *) echo "$id" ;;
+    esac
+    return 0
+  done
+}
+
 # every build of this checkout: multi-config (<variant>/<name>) and single-config (<variant>/<name>/<config>)
 builds=()
 for root in "$build_root"; do
@@ -106,7 +126,9 @@ for root in "$build_root"; do
     [[ "$(cache_value "$cache" CMAKE_HOME_DIRECTORY)" == "$src" ]] || continue
     dir="$(dirname "$cache")"
     compiler="$(basename "$(cache_value "$cache" CMAKE_CXX_COMPILER)")"
-    if [[ -z "$filter" || "${dir#"$root"/}" == *"$filter"* || "$compiler" == *"$filter"* ]]; then
+    family="$(compiler_family "$dir")"
+    if [[ -z "$filter" || "${dir#"$root"/}" == *"$filter"* || "$compiler" == *"$filter"* ||
+      (-n "$family" && "$family" == *"$filter"*) ]]; then
       builds+=("$dir")
     fi
   done
@@ -122,7 +144,7 @@ if [[ ${#builds[@]} -eq 0 ]]; then
 fi
 if [[ ${#builds[@]} -gt 1 ]]; then
   echo "Several builds of $name: choose one with a filter (a part of the folder name or of the compiler)." >&2
-  printf '  %s\n' "${builds[@]}" >&2
+  for dir in "${builds[@]}"; do echo "  $dir ($(compiler_family "$dir"))" >&2; done
   exit 1
 fi
 
